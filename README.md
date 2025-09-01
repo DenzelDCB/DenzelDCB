@@ -1,16 +1,34 @@
-## Hi there 👋
+# Hi there, I'm DenzelDCB 👋
 
-<!--
-**DenzelDCB/DenzelDCB** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
+I'm a software engineer passionate about Python, JavaScript, Machine Learning, and Web Development. I love creating innovative projects and exploring the latest in tech and gaming.
 
-Here are some ideas to get you started:
+---
 
-- 🔭 I’m currently working on ...
-- 🌱 I’m currently learning ...
-- 👯 I’m looking to collaborate on ...
-- 🤔 I’m looking for help with ...
-- 💬 Ask me about ...
-- 📫 How to reach me: ...
-- 😄 Pronouns: ...
-- ⚡ Fun fact: ...
--->
+## 🚀 Projects
+
+- **[Ventrai](https://ventrai.pages.dev)**  
+  AI-powered solutions for modern workflows.
+
+- **[Phytosense](https://phytosense.pages.dev)**  
+  Advanced plant health monitoring using machine learning.
+
+---
+
+## 🛠️ Skills
+
+- **Languages:** Python, JavaScript
+- **Specialties:** Machine Learning, Web Development
+
+---
+
+## 🎮 Interests
+
+- Gaming enthusiast
+
+---
+
+## 🏆 GitHub Trophies
+
+[![trophy](https://github-profile-trophy.vercel.app/?username=denzeldcb)](https://github.com/denzeldcb)
+
+---
