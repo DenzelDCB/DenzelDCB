@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Neighborhood Escape: 2-Player Maze</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Smooth UI micro-animations */
+    .btn {
+      transition: transform .12s ease, opacity .2s ease, background .2s ease;
+    }
+    .btn:active { transform: scale(0.98); }
+    canvas { image-rendering: pixelated; }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-900 to-slate-900 text-slate-100">
+  <div class="max-w-7xl mx-auto px-4 py-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-300/30 grid place-items-center">
+          <span class="text-xl">🏘️</span>
+        </div>
+        <div>
+          <h1 class="text-2xl font-bold tracking-tight">Neighborhood Escape</h1>
+          <p class="text-sm text-indigo-200/80">Co-op. Survive. Escape the maze.</p>
+        </div>
+      </div>
+      <div class="flex gap-2">
+        <button id="btnStart" class="btn px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-semibold shadow-lg shadow-emerald-500/20">
+          ▶ Start / Restart
+        </button>
+        <button id="btnPause" class="btn px-4 py-2 rounded-lg bg-sky-500 hover:bg-sky-600 text-white font-semibold shadow-lg shadow-sky-500/20">
+          ⏸ Pause
+        </button>
+      </div>
+    </div>
+
+    <!-- HUD -->
+    <div class="grid md:grid-cols-2 gap-4 mb-4">
+      <!-- Player 1 HUD -->
+      <div class="rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm p-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-rose-500 grid place-items-center shadow-lg shadow-rose-500/30">P1</div>
+            <div>
+              <div class="font-bold">Player 1</div>
+              <div id="p1Lives" class="text-rose-300 text-sm">❤️❤️❤️</div>
+            </div>
+          </div>
+          <div id="p1Inv" class="text-sm text-slate-200 flex flex-wrap items-center gap-3">
+            <span class="px-2 py-1 rounded bg-white/10">⚔️ 0</span>
+            <span class="px-2 py-1 rounded bg-white/10">🛡️ 0</span>
+            <span class="px-2 py-1 rounded bg-white/10">🔦 0</span>
+            <span class="px-2 py-1 rounded bg-white/10">🧱 0</span>
+            <span class="px-2 py-1 rounded bg-white/10">➕ 0</span>
+          </div>
+        </div>
+        <div class="mt-3 text-xs text-slate-300">
+          Move: W A S D • Attack: E • Place Barricade: Q • Heal: R • Use Freeze: F • Use Axe: X • Use Key: T
+        </div>
+      </div>
+      <!-- Player 2 HUD -->
+      <div class="rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm p-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-sky-500 grid place-items-center shadow-lg shadow-sky-500/30">P2</div>
+            <div>
+              <div class="font-bold">Player 2</div>
+              <div id="p2Lives" class="text-rose-300 text-sm">❤️❤️❤️</div>
+            </div>
+          </div>
+          <div id="p2Inv" class="text-sm text-slate-200 flex flex-wrap items-center gap-3">
+            <span class="px-2 py-1 rounded bg-white/10">⚔️ 0</span>
+            <span class="px-2 py-1 rounded bg-white/10">🛡️ 0</span>
+            <span class="px-2 py-1 rounded bg-white/10">🔦 0</span>
+            <span class="px-2 py-1 rounded bg-white/10">🧱 0</span>
+            <span class="px-2 py-1 rounded bg-white/10">➕ 0</span>
+          </div>
+        </div>
+        <div class="mt-3 text-xs text-slate-300">
+          Move: Arrow Keys • Attack: / • Place Barricade: . • Heal: , • Use Freeze: ; • Use Axe: ' • Use Key: ]
+        </div>
+      </div>
+    </div>
+
+    <!-- Play Area -->
+    <div class="grid lg:grid-cols-[1fr_220px] gap-4">
+      <div class="rounded-xl border border-white/10 bg-slate-950/40 p-3 relative overflow-hidden">
+        <canvas id="game" class="w-full rounded-lg border border-white/10 bg-slate-900"></canvas>
+
+        <!-- Overlays -->
+        <div id="overlayStart" class="absolute inset-0 grid place-items-center bg-slate-950/80 backdrop-blur-sm">
+          <div class="text-center max-w-lg p-6 rounded-2xl bg-white/10 border border-white/10">
+            <div class="text-4xl mb-2">🧟‍♂️ Neighborhood Escape</div>
+            <p class="text-slate-200 mb-4">Co-op with 2 players. Find the Exit Gate together. Avoid or fight zombies. Houses are safe, zombies can’t enter.</p>
+            <div class="grid sm:grid-cols-2 gap-3 text-left text-sm bg-black/30 p-3 rounded-xl mb-4">
+              <div class="space-y-1">
+                <div class="font-semibold">Player 1</div>
+                <div>Move: W A S D</div>
+                <div>Attack: E (needs ⚔️)</div>
+                <div>Place Barricade: Q</div>
+                <div>Heal: R</div>
+                <div>Use Axe: X</div>
+                <div>Use Key: T</div>
+              </div>
+              <div class="space-y-1">
+                <div class="font-semibold">Player 2</div>
+                <div>Move: Arrow Keys</div>
+                <div>Attack: / (needs ⚔️)</div>
+                <div>Place Barricade: .</div>
+                <div>Heal: ,</div>
+                <div>Use Axe: '</div>
+                <div>Use Key: ]</div>
+              </div>
+            </div>
+            <p class="text-slate-300 mb-2">
+              Items: ⚔️ infinite use • 🛡️ blocks 2 hits • 🔦 bigger view (only 1) • 🧱 place once (zombies can break) • 🪓 break barricades in front of you (1-use) • 🔑 Red/Green/Blue keys open matching doors (shared) • ➕ heals 1 heart
+            </p>
+            <button id="startBtnOverlay" class="btn px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-semibold shadow-lg shadow-emerald-500/30">
+              ▶ Start Game
+            </button>
+          </div>
+        </div>
+
+        <div id="overlayWin" class="hidden absolute inset-0 grid place-items-center bg-slate-950/80 backdrop-blur-sm">
+          <div class="text-center max-w-lg p-6 rounded-2xl bg-white/10 border border-emerald-300/20">
+            <div class="text-4xl mb-2 text-emerald-300">🏁 You Escaped!</div>
+            <p class="text-slate-200 mb-4">Both players reached the gate. Great teamwork!</p>
+            <button class="btn px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-semibold shadow-lg shadow-emerald-500/30" onclick="startGame()">
+              ▶ Play Again
+            </button>
+          </div>
+        </div>
+
+        <div id="overlayRespawn" class="hidden pointer-events-none absolute inset-x-0 top-4 mx-auto w-fit px-4 py-2 rounded-xl bg-amber-500/20 border border-amber-300/30 text-amber-100 text-sm shadow">
+          Respawning a player... items scattered!
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <div class="rounded-xl border border-white/10 bg-white/5 p-4">
+        <div class="mb-3">
+          <div class="font-semibold mb-1">Mini-map</div>
+          <canvas id="minimap" class="w-full rounded border border-white/10 bg-slate-900"></canvas>
+        </div>
+        <div class="space-y-2 text-sm text-slate-200">
+          <div class="flex items-center justify-between">
+            <span>Difficulty</span>
+            <select id="difficulty" class="bg-slate-800 border border-white/10 rounded px-3 py-1">
+              <option value="easy">Easy</option>
+              <option value="normal" selected>Normal</option>
+              <option value="hard">Hard</option>
+            </select>
+          </div>
+          <div class="flex items-center justify-between">
+            <span>Maze Size</span>
+            <select id="mazeSize" class="bg-slate-800 border border-white/10 rounded px-3 py-1">
+              <option value="41">Very Large</option>
+              <option value="51">Huge</option>
+              <option value="61" selected>Humongous</option>
+              <option value="71">Gigantic</option>
+              <option value="81">Colossal</option>
+            </select>
+          </div>
+          <div class="flex items-center justify-between">
+            <span>Zombies</span>
+            <select id="zombieCount" class="bg-slate-800 border border-white/10 rounded px-3 py-1">
+              <option value="2" selected>2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+            </select>
+          </div>
+          <div class="pt-2 text-xs text-slate-400">
+            Goal: Both reach the gold gate to win.
+          </div>
+          <div class="pt-2 text-xs text-slate-400">
+            Safe zones: Four houses are safe. Zombies can’t enter.
+          </div>
+          <div class="pt-2 text-xs text-slate-400">
+            Doors & Keys: Find 🔑 Red / 🔑 Green / 🔑 Blue to unlock matching doors for everyone.
+          </div>
+          <div class="pt-2 text-xs text-amber-400">
+            Note: No extra AI allies are included.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="mt-6 text-center text-xs text-slate-400">
+      Tip: If you lose all hearts, you respawn at your house and your items get scattered across the maze.
+    </div>
+  </div>
+
+  <script>
+    // === Game Config ===
+    const TILE_WALL = 1;
+    const TILE_PATH = 0;
+    const TILE_SAFE = 2;
+    const TILE_EXIT = 3;
+    const TILE_BARRICADE = 4; // dynamic
+    const TILE_DOOR_RED = 5;
+    const TILE_DOOR_GREEN = 6;
+    const TILE_DOOR_BLUE = 7;
+
+    const ITEM_SWORD = 'sword';
+    const ITEM_SHIELD = 'shield';
+    const ITEM_FLASH = 'flashlight';
+    const ITEM_BARR = 'barricade';
+    const ITEM_MED = 'medkit';
+    const ITEM_AXE = 'axe';
+    const ITEM_FREEZE = 'freeze';
+    const FREEZE_TICKS = 60; // ~1s-ish depending on loop
+    const ITEM_KEY_RED = 'key_red';
+    const ITEM_KEY_GREEN = 'key_green';
+    const ITEM_KEY_BLUE = 'key_blue';
+
+    const COLORS = {
+      wall: '#1f2937', // slate-800
+      path: '#0b1220', // deep slate
+      road: '#0f172a', // slate-900
+      safe1: '#3b82f6', // blue house border
+      safe2: '#ef4444', // red house border
+      exit: '#fbbf24',  // amber-300
+      grass: '#0b1220',
+      seen: '#0a0f1c',
+      dark: '#020617',
+      barricade: '#9a6b39'
+    };
+
+    // DOM
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const mini = document.getElementById('minimap');
+    const mctx = mini.getContext('2d');
+
+    const p1LivesEl = document.getElementById('p1Lives');
+    const p2LivesEl = document.getElementById('p2Lives');
+    const p1InvEl = document.getElementById('p1Inv');
+    const p2InvEl = document.getElementById('p2Inv');
+    const overlayStart = document.getElementById('overlayStart');
+    const overlayWin = document.getElementById('overlayWin');
+    const overlayRespawn = document.getElementById('overlayRespawn');
+    const btnStart = document.getElementById('btnStart');
+    const btnPause = document.getElementById('btnPause');
+    const startBtnOverlay = document.getElementById('startBtnOverlay');
+    const difficultySel = document.getElementById('difficulty');
+    const mazeSizeSel = document.getElementById('mazeSize');
+
+    // Game state
+    let GRID = [];
+    let SIZE = 61; // default humongous
+    let tileSize = 14; // scale dynamically later
+    let gameRunning = false;
+    let paused = false;
+    let tick = 0;
+
+    let zombies = [];
+    let players = [];
+    let items = [];
+    let barricades = []; // {x,y,hp}
+    let seen = []; // fog of war memory (optional for flair)
+    let exitPos = { x: 0, y: 0 };
+    const openedDoors = { red:false, green:false, blue:false };
+
+    // Input
+    const keys = {};
+    window.addEventListener('keydown', (e) => { keys[e.key] = true; });
+    window.addEventListener('keyup', (e) => { keys[e.key] = false; });
+
+    // Resize canvas responsively
+    function fitCanvas() {
+      const parent = canvas.parentElement.getBoundingClientRect();
+      const maxWidth = parent.width - 8;
+      const maxHeight = Math.min(680, window.innerHeight * 0.7);
+      // Keep aspect roughly square but responsive
+      const w = Math.min(maxWidth, maxHeight);
+      canvas.width = Math.floor(w);
+      canvas.height = Math.floor(w);
+      // tile size from canvas size
+      tileSize = Math.floor(canvas.width / SIZE);
+      if (tileSize < 8) tileSize = 8;
+      // adjust canvas to exact grid render size
+      canvas.width = tileSize * SIZE;
+      canvas.height = tileSize * SIZE;
+
+      // Mini-map sizing
+      mini.width = 180;
+      mini.height = 180;
+    }
+    window.addEventListener('resize', fitCanvas);
+
+    function randInt(n) { return Math.floor(Math.random() * n); }
+    function inBounds(x,y) { return x >= 0 && y >= 0 && x < SIZE && y < SIZE; }
+    function isClosedDoor(x,y){
+      if (!inBounds(x,y)) return false;
+      const t = GRID[y][x];
+      if (t === TILE_DOOR_RED && !openedDoors.red) return true;
+      if (t === TILE_DOOR_GREEN && !openedDoors.green) return true;
+      if (t === TILE_DOOR_BLUE && !openedDoors.blue) return true;
+      return false;
+    }
+    function isWalkable(x,y) {
+      if (!inBounds(x,y)) return false;
+      if (GRID[y][x] === TILE_WALL) return false;
+      if (isClosedDoor(x,y)) return false;
+      if (barricades.find(b => b.x === x && b.y === y && b.hp > 0)) return false;
+      return true;
+    }
+    function isSafe(x,y) { return inBounds(x,y) && GRID[y][x] === TILE_SAFE; }
+
+    // Maze generation (recursive backtracker on odd cells)
+    function generateMaze(size) {
+      GRID = new Array(size).fill(0).map(_ => new Array(size).fill(TILE_WALL));
+      const stack = [];
+      let cx = 1, cy = 1;
+      GRID[cy][cx] = TILE_PATH;
+      stack.push({x: cx, y: cy});
+
+      const dirs = [
+        {dx: 0, dy: -2},
+        {dx: 2, dy: 0},
+        {dx: 0, dy: 2},
+        {dx: -2, dy: 0},
+      ];
+      while (stack.length) {
+        const current = stack[stack.length - 1];
+        const shuffled = dirs.slice().sort(() => Math.random() - 0.5);
+        let carved = false;
+        for (const d of shuffled) {
+          const nx = current.x + d.dx;
+          const ny = current.y + d.dy;
+          if (nx > 0 && ny > 0 && nx < size - 1 && ny < size - 1 && GRID[ny][nx] === TILE_WALL) {
+            GRID[current.y + d.dy/2][current.x + d.dx/2] = TILE_PATH;
+            GRID[ny][nx] = TILE_PATH;
+            stack.push({x: nx, y: ny});
+            carved = true;
+            break;
+          }
+        }
+        if (!carved) stack.pop();
+      }
+
+      // Carve streets feel: widen sparse corridors randomly
+      for (let y = 1; y < size - 1; y++) {
+        for (let x = 1; x < size - 1; x++) {
+          if (GRID[y][x] === TILE_PATH && Math.random() < 0.05) {
+            const neighbors = [
+              [x+1,y],[x-1,y],[x,y+1],[x,y-1]
+            ];
+            for (const [nx,ny] of neighbors) {
+              if (GRID[ny][nx] === TILE_WALL && Math.random() < 0.5) {
+                GRID[ny][nx] = TILE_PATH;
+              }
+            }
+          }
+        }
+      }
+
+      // Four Safe houses
+      const houseSize = 5; // 5x5 each
+      const houses = [
+        {x1:1, y1:1},
+        {x1:size - 1 - houseSize, y1:1},
+        {x1:1, y1:size - 1 - houseSize},
+        {x1:size - 1 - houseSize, y1:size - 1 - houseSize}
+      ];
+      houses.forEach(h => {
+        for (let y = h.y1; y < h.y1 + houseSize; y++) {
+          for (let x = h.x1; x < h.x1 + houseSize; x++) {
+            GRID[y][x] = TILE_SAFE;
+          }
+        }
+      });
+
+      // Ensure doors to houses
+      GRID[1 + Math.floor(houseSize/2)][1 + houseSize] = TILE_PATH; // top-left
+      GRID[1 + Math.floor(houseSize/2)][size - 2 - houseSize - 1] = TILE_PATH; // top-right
+      GRID[size - 2 - houseSize + Math.floor(houseSize/2)][1 + houseSize] = TILE_PATH; // bottom-left
+      GRID[size - 3 - Math.floor(houseSize/2)][size - 3 - houseSize] = TILE_PATH; // bottom-right
+
+      // Exit gate near center right
+      const ex = size - 3, ey = Math.floor(size/2);
+      GRID[ey][ex] = TILE_EXIT;
+      GRID[ey][ex-1] = TILE_PATH;
+      exitPos = { x: ex, y: ey };
+
+      // Place some doors of colors
+      const doorSpots = [
+        {...randEmptyTile(), color:'red'},
+        {...randEmptyTile(), color:'green'},
+        {...randEmptyTile(), color:'blue'},
+      ];
+      doorSpots.forEach(d => {
+        if (d.color==='red') GRID[d.y][d.x] = TILE_DOOR_RED;
+        if (d.color==='green') GRID[d.y][d.x] = TILE_DOOR_GREEN;
+        if (d.color==='blue') GRID[d.y][d.x] = TILE_DOOR_BLUE;
+      });
+
+      // Seen array
+      seen = new Array(size).fill(0).map(_ => new Array(size).fill(false));
+    }
+
+    function randEmptyTile(excludeSafe = true) {
+      let tries = 0;
+      while (tries++ < 10000) {
+        const x = 1 + randInt(SIZE - 2);
+        const y = 1 + randInt(SIZE - 2);
+        if (GRID[y][x] === TILE_PATH && !barricades.find(b => b.x === x && b.y === y)) {
+          if (excludeSafe && isSafe(x,y)) continue;
+          if (x === exitPos.x && y === exitPos.y) continue;
+          return {x,y};
+        }
+      }
+      return {x: 1, y: 1};
+    }
+
+    function placeItems() {
+      items = [];
+      // Flashlights: between 2 - 5
+      const flashCount = 2 + randInt(4); // 2..5
+      for (let i = 0; i < flashCount; i++) items.push({...randEmptyTile(), type: ITEM_FLASH});
+      // Swords: 3
+      for (let i = 0; i < 3; i++) items.push({...randEmptyTile(), type: ITEM_SWORD});
+      // Shields: 4
+      for (let i = 0; i < 4; i++) items.push({...randEmptyTile(), type: ITEM_SHIELD});
+      // Medkits: 8
+      for (let i = 0; i < 8; i++) items.push({...randEmptyTile(), type: ITEM_MED});
+      // Barricade pickups
+      const barrCount = 14 + randInt(10);
+      for (let i = 0; i < barrCount; i++) items.push({...randEmptyTile(), type: ITEM_BARR});
+      // Axes (break barricades) one-use
+      for (let i = 0; i < 6; i++) items.push({...randEmptyTile(), type: ITEM_AXE});
+      // Freeze rays (1-use)
+      for (let i = 0; i < 6; i++) items.push({...randEmptyTile(), type: ITEM_FREEZE});
+      // Keys
+      items.push({...randEmptyTile(), type: ITEM_KEY_RED});
+      items.push({...randEmptyTile(), type: ITEM_KEY_GREEN});
+      items.push({...randEmptyTile(), type: ITEM_KEY_BLUE});
+    }
+
+    function setupEntities() {
+      barricades = [];
+      players = [
+        {
+          id: 1,
+          x: 2, y: 2,
+          home: {x: 2, y: 2},
+          lives: 3,
+          hasSword: false,
+          shield: 0,
+          hasFlash: false,
+          barrCount: 0,
+          meds: 0,
+          axes: 0,
+          freezes: 0 /* not used */,
+          keys: {red:false, green:false, blue:false},
+          lastMove: {dx: 1, dy: 0},
+          dead: false,
+          respawnAt: 0,
+          frozenUntil: 0
+        },
+        {
+          id: 2,
+          x: SIZE - 3, y: SIZE - 3,
+          home: {x: SIZE - 3, y: SIZE - 3},
+          lives: 3,
+          hasSword: false,
+          shield: 0,
+          hasFlash: false,
+          barrCount: 0,
+          meds: 0,
+          axes: 0,
+          freezes: 0 /* not used */,
+          keys: {red:false, green:false, blue:false},
+          lastMove: {dx: -1, dy: 0},
+          dead: false,
+          respawnAt: 0,
+          frozenUntil: 0
+        },
+      ];
+      // Zombies: adjustable smart
+      const zCount = parseInt(document.getElementById('zombieCount').value, 10) || 2;
+      zombies = new Array(zCount).fill(0).map(_ => ({...randEmptyTile(), spawn: null, cooldown: 0, frozenUntil:0}));
+      zombies.forEach(z => z.spawn = {x: z.x, y: z.y});
+    }
+
+    function scatterPlayerItems(p) {
+      const drops = [];
+      if (p.hasSword) drops.push(ITEM_SWORD);
+      if (p.hasFlash) drops.push(ITEM_FLASH);
+      for (let i = 0; i < p.shield; i += 2) drops.push(ITEM_SHIELD); // each shield pickup gives 2 blocks
+      for (let i = 0; i < p.barrCount; i++) drops.push(ITEM_BARR);
+      for (let i = 0; i < p.meds; i++) drops.push(ITEM_MED);
+      drops.forEach(t => {
+        const pos = randEmptyTile();
+        items.push({x: pos.x, y: pos.y, type: t});
+      });
+      // reset inventory
+      p.hasSword = false;
+      p.hasFlash = false;
+      p.shield = 0;
+      p.barrCount = 0;
+      p.meds = 0;
+    }
+
+    // BFS for pathfinding
+    function bfsNextStep(sx, sy, tx, ty, maxRange=Infinity) {
+      const dist = Math.abs(sx - tx) + Math.abs(sy - ty);
+      if (dist > maxRange) return null;
+      const q = [];
+      const visited = new Array(SIZE).fill(0).map(_ => new Array(SIZE).fill(false));
+      const parent = new Array(SIZE).fill(0).map(_ => new Array(SIZE).fill(null));
+      q.push({x:sx,y:sy});
+      visited[sy][sx] = true;
+      const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
+      while (q.length) {
+        const cur = q.shift();
+        if (cur.x === tx && cur.y === ty) {
+          // reconstruct step
+          let cx = tx, cy = ty;
+          while (parent[cy][cx] && !(parent[cy][cx].x === sx && parent[cy][cx].y === sy)) {
+            const p = parent[cy][cx];
+            cx = p.x; cy = p.y;
+          }
+          return {x: cx, y: cy};
+        }
+        for (const [dx,dy] of dirs) {
+          const nx = cur.x + dx, ny = cur.y + dy;
+          if (!inBounds(nx,ny) || visited[ny][nx]) continue;
+          if (GRID[ny][nx] === TILE_WALL) continue;
+          if (isClosedDoor(nx,ny)) continue;
+          if (isSafe(nx,ny)) continue; // zombies avoid safe zones
+          // barricade blocks
+          if (barricades.find(b => b.x === nx && b.y === ny && b.hp > 0)) continue;
+          visited[ny][nx] = true;
+          parent[ny][nx] = {x: cur.x, y: cur.y};
+          q.push({x:nx,y:ny});
+        }
+      }
+      return null;
+    }
+
+    function tryMove(entity, dx, dy) {
+      const nx = entity.x + dx, ny = entity.y + dy;
+      if (!isWalkable(nx,ny)) return false;
+      entity.x = nx;
+      entity.y = ny;
+      return true;
+    }
+
+    function pickupItems(p) {
+      for (let i = items.length - 1; i >= 0; i--) {
+        const it = items[i];
+        if (it.x === p.x && it.y === p.y) {
+          if (it.type === ITEM_SWORD) p.hasSword = true;
+          if (it.type === ITEM_FLASH && !p.hasFlash) p.hasFlash = true; // only one flashlight allowed
+          if (it.type === ITEM_SHIELD) p.shield += 2; // 2 blocks per pickup
+          if (it.type === ITEM_BARR) p.barrCount += 1;
+          if (it.type === ITEM_MED) p.meds += 1;
+          if (it.type === ITEM_AXE) p.axes += 1;
+          if (it.type === ITEM_FREEZE) p.freezes += 1;
+          if (it.type === ITEM_KEY_RED) p.keys.red = true;
+          if (it.type === ITEM_KEY_GREEN) p.keys.green = true;
+          if (it.type === ITEM_KEY_BLUE) p.keys.blue = true;
+          items.splice(i,1);
+        }
+      }
+    }
+
+    function playerAttack(p) {
+      if (!p.hasSword) return;
+      const dirs = [
+        p.lastMove, // prioritize direction faced
+        {dx:1,dy:0},{dx:-1,dy:0},{dx:0,dy:1},{dx:0,dy:-1}
+      ];
+      for (const d of dirs) {
+        const tx = p.x + d.dx, ty = p.y + d.dy;
+        // hit zombie adjacent
+        const zi = zombies.findIndex(z => z.x === tx && z.y === ty);
+        if (zi >= 0) {
+          // "defeat" zombie: respawn later
+          const z = zombies[zi];
+          z.x = z.spawn.x;
+          z.y = z.spawn.y;
+          z.cooldown = 10; // small delay ticks before moving again
+          return;
+        }
+      }
+    }
+
+    function placeBarricade(p) {
+      if (p.barrCount <= 0) return;
+      const tx = p.x + p.lastMove.dx, ty = p.y + p.lastMove.dy;
+      if (!inBounds(tx,ty)) return;
+      if (GRID[ty][tx] === TILE_WALL || GRID[ty][tx] === TILE_EXIT || isSafe(tx,ty)) return;
+      // can't place on another barricade or players
+      if (barricades.find(b => b.x === tx && b.y === ty && b.hp > 0)) return;
+      if (players.some(pl => pl.x === tx && pl.y === ty)) return;
+      // place
+      barricades.push({x: tx, y: ty, hp: 2});
+      p.barrCount -= 1;
+    }
+
+    function useMedkit(p) {
+      if (p.meds <= 0 || p.lives >= 3) return;
+      p.lives++;
+      p.meds--;
+    }
+
+    function damagePlayer(p) {
+      if (isSafe(p.x,p.y)) return; // should not happen
+      if (p.shield > 0) {
+        p.shield -= 1;
+        return;
+      }
+      p.lives -= 1;
+      if (p.lives <= 0) {
+        // Death: scatter items, respawn
+        scatterPlayerItems(p);
+        p.dead = true;
+        p.respawnAt = tick + 20; // short delay
+        overlayRespawn.classList.remove('hidden');
+        setTimeout(() => overlayRespawn.classList.add('hidden'), 1200);
+      }
+    }
+
+    function respawnIfReady(p) {
+      if (p.dead && tick >= p.respawnAt) {
+        p.dead = false;
+        p.lives = 3;
+        p.x = p.home.x;
+        p.y = p.home.y;
+      }
+    }
+
+    function useAxe(p){
+      if (p.axes <= 0) return;
+      const tx = p.x + p.lastMove.dx, ty = p.y + p.lastMove.dy;
+      const b = barricades.find(bb => bb.x === tx && bb.y === ty && bb.hp > 0);
+      if (b){ b.hp = 0; p.axes -= 1; }
+    }
+    function useKey(p){
+      const tx = p.x + p.lastMove.dx, ty = p.y + p.lastMove.dy;
+      const t = inBounds(tx,ty) ? GRID[ty][tx] : null;
+      if (t === TILE_DOOR_RED && p.keys.red) openedDoors.red = true;
+      if (t === TILE_DOOR_GREEN && p.keys.green) openedDoors.green = true;
+      if (t === TILE_DOOR_BLUE && p.keys.blue) openedDoors.blue = true;
+    }
+    function fireFreeze(p){
+      if (p.freezes <= 0) return;
+      p.freezes -= 1;
+      const ray = {x:p.x, y:p.y, dx:p.lastMove.dx, dy:p.lastMove.dy};
+      // travel up to 8 tiles or until hit
+      for (let i=0;i<8;i++){
+        ray.x += ray.dx; ray.y += ray.dy;
+        if (!inBounds(ray.x,ray.y) || GRID[ray.y][ray.x]===TILE_WALL || isClosedDoor(ray.x,ray.y)) break;
+        // freeze first entity hit
+        const z = zombies.find(zz => zz.x===ray.x && zz.y===ray.y);
+        if (z){ z.frozenUntil = tick + FREEZE_TICKS; break; }
+        const other = players.find(pp => pp.x===ray.x && pp.y===ray.y && pp!==p && !pp.dead);
+        if (other){ other.frozenUntil = tick + FREEZE_TICKS; break; }
+        const barr = barricades.find(bb => bb.x===ray.x && bb.y===ray.y && bb.hp>0);
+        if (barr){ break; }
+      }
+    }
+    function updatePlayers() {
+      // Player 1 input
+      const p1 = players[0];
+      if (!p1.dead) {
+        let moved = false;
+        if (p1.frozenUntil && tick < p1.frozenUntil) {
+          // can't move while frozen
+        } else {
+          if (keys['w'] || keys['W']) { moved = tryMove(p1, 0, -1); if (moved) p1.lastMove = {dx:0,dy:-1}; }
+        else if (keys['s'] || keys['S']) { moved = tryMove(p1, 0, 1); if (moved) p1.lastMove = {dx:0,dy:1}; }
+        else if (keys['a'] || keys['A']) { moved = tryMove(p1, -1, 0); if (moved) p1.lastMove = {dx:-1,dy:0}; }
+        else if (keys['d'] || keys['D']) { moved = tryMove(p1, 1, 0); if (moved) p1.lastMove = {dx:1,dy:0}; }
+        }
+        if (keys['e'] || keys['E']) { // attack
+          if (tick % 6 === 0) playerAttack(p1);
+        }
+        if (keys['f'] || keys['F']) { if (tick % 10 === 0) fireFreeze(p1); }
+        if (keys['x'] || keys['X']) { if (tick % 10 === 0) useAxe(p1); }
+        if (keys['t'] || keys['T']) { if (tick % 10 === 0) useKey(p1); }
+        if (keys['q'] || keys['Q']) { if (tick % 8 === 0) placeBarricade(p1); }
+        if (keys['r'] || keys['R']) { if (tick % 8 === 0) useMedkit(p1); }
+        pickupItems(p1);
+      } else { respawnIfReady(p1); }
+
+      // Player 2 input
+      const p2 = players[1];
+      if (!p2.dead) {
+        let moved2 = false;
+        if (p2.frozenUntil && tick < p2.frozenUntil) {
+          // can't move while frozen
+        } else {
+          if (keys['ArrowUp']) { moved2 = tryMove(p2, 0, -1); if (moved2) p2.lastMove = {dx:0,dy:-1}; }
+        else if (keys['ArrowDown']) { moved2 = tryMove(p2, 0, 1); if (moved2) p2.lastMove = {dx:0,dy:1}; }
+        else if (keys['ArrowLeft']) { moved2 = tryMove(p2, -1, 0); if (moved2) p2.lastMove = {dx:-1,dy:0}; }
+        else if (keys['ArrowRight']) { moved2 = tryMove(p2, 1, 0); if (moved2) p2.lastMove = {dx:1,dy:0}; }
+        }
+        if (keys['/']) { if (tick % 6 === 0) playerAttack(p2); }
+        if (keys[';']) { if (tick % 10 === 0) fireFreeze(p2); }
+        if (keys["'"]) { if (tick % 10 === 0) useAxe(p2); }
+        if (keys[']']) { if (tick % 10 === 0) useKey(p2); }
+        if (keys['.']) { if (tick % 8 === 0) placeBarricade(p2); }
+        if (keys[',']) { if (tick % 8 === 0) useMedkit(p2); }
+        pickupItems(p2);
+      } else { respawnIfReady(p2); }
+    }
+
+    function updateZombies() {
+      const hard = difficultySel.value === 'hard';
+      const chaseRange = 6; // per request
+      const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
+
+      zombies.forEach(z => {
+        if (z.frozenUntil && tick < z.frozenUntil) return;
+        if (z.cooldown > 0) { z.cooldown--; return; }
+
+        // target nearest player by manhattan
+        let target = null;
+        let bestDist = 9999;
+        for (const p of players) {
+          if (p.dead) continue;
+          const d = Math.abs(p.x - z.x) + Math.abs(p.y - z.y);
+          if (d < bestDist) {
+            bestDist = d; target = p;
+          }
+        }
+
+        let moved = false;
+        if (target && bestDist <= chaseRange) {
+          const step = bfsNextStep(z.x, z.y, target.x, target.y, 999);
+          if (step) {
+            // barricade check
+            const bx = step.x, by = step.y;
+            const barr = barricades.find(b => b.x === bx && b.y === by && b.hp > 0);
+            if (barr) {
+              // break barricade
+              if (tick % (hard ? 4 : 6) === 0) {
+                barr.hp -= 1;
+                if (barr.hp <= 0) {
+                  // cleared
+                }
+              }
+            } else {
+              z.x = step.x;
+              z.y = step.y;
+              moved = true;
+            }
+          }
+        }
+        if (!moved) {
+          // wander
+          const shuffled = dirs.slice().sort(() => Math.random() - 0.5);
+          for (const [dx,dy] of shuffled) {
+            const nx = z.x + dx, ny = z.y + dy;
+            if (!inBounds(nx,ny) || GRID[ny][nx] === TILE_WALL) continue;
+            if (isSafe(nx,ny)) continue;
+            const barr = barricades.find(b => b.x === nx && b.y === ny && b.hp > 0);
+            if (barr) {
+              if (tick % (hard ? 5 : 8) === 0) barr.hp -= 1;
+              continue;
+            }
+            z.x = nx; z.y = ny; break;
+          }
+        }
+
+        // touch damage
+        players.forEach(p => {
+          if (!p.dead && p.x === z.x && p.y === z.y) {
+            damagePlayer(p);
+            z.cooldown = hard ? 14 : 18; // attack cooldown
+          }
+        });
+      });
+    }
+
+    function bothAtExit() {
+      return players.every(p => !p.dead && p.x === exitPos.x && p.y === exitPos.y);
+    }
+
+    function updateHUD() {
+      const heartStr = (n) => '❤️'.repeat(n) + '🖤'.repeat(3-n);
+      p1LivesEl.textContent = heartStr(players[0].lives);
+      p2LivesEl.textContent = heartStr(players[1].lives);
+
+      const invPill = (emoji, n) => {
+        const pill = document.createElement('span');
+        pill.className = "px-2 py-1 rounded bg-white/10";
+        pill.textContent = `${emoji} ${n}`;
+        return pill;
+      };
+      const keyPill = (label, has) => {
+        const pill = document.createElement('span');
+        pill.className = "px-2 py-1 rounded bg-white/10";
+        pill.textContent = `${label} ${has ? '✓' : '✗'}`;
+        return pill;
+      };
+      // P1
+      p1InvEl.innerHTML = '';
+      p1InvEl.append(invPill('⚔️', players[0].hasSword ? 1 : 0));
+      p1InvEl.append(invPill('🛡️', players[0].shield));
+      p1InvEl.append(invPill('🔦', players[0].hasFlash ? 1 : 0));
+      p1InvEl.append(invPill('🧱', players[0].barrCount));
+      p1InvEl.append(invPill('🪓', players[0].axes));
+      p1InvEl.append(invPill('❄️', players[0].freezes));
+      p1InvEl.append(invPill('➕', players[0].meds));
+      p1InvEl.append(keyPill('🔑R', players[0].keys.red));
+      p1InvEl.append(keyPill('🔑G', players[0].keys.green));
+      p1InvEl.append(keyPill('🔑B', players[0].keys.blue));
+      // P2
+      p2InvEl.innerHTML = '';
+      p2InvEl.append(invPill('⚔️', players[1].hasSword ? 1 : 0));
+      p2InvEl.append(invPill('🛡️', players[1].shield));
+      p2InvEl.append(invPill('🔦', players[1].hasFlash ? 1 : 0));
+      p2InvEl.append(invPill('🧱', players[1].barrCount));
+      p2InvEl.append(invPill('🪓', players[1].axes));
+      p2InvEl.append(invPill('❄️', players[1].freezes));
+      p2InvEl.append(invPill('➕', players[1].meds));
+      p2InvEl.append(keyPill('🔑R', players[1].keys.red));
+      p2InvEl.append(keyPill('🔑G', players[1].keys.green));
+      p2InvEl.append(keyPill('🔑B', players[1].keys.blue));
+    }
+
+    function draw() {
+      ctx.clearRect(0,0,canvas.width, canvas.height);
+      // tiles
+      for (let y = 0; y < SIZE; y++) {
+        for (let x = 0; x < SIZE; x++) {
+          let c = COLORS.path;
+          if (GRID[y][x] === TILE_WALL) c = COLORS.wall;
+          else if (GRID[y][x] === TILE_PATH) c = COLORS.road;
+          else if (GRID[y][x] === TILE_SAFE) c = '#0a1a2f';
+          else if (GRID[y][x] === TILE_EXIT) c = '#3b2d03';
+
+          ctx.fillStyle = c;
+          ctx.fillRect(x*tileSize, y*tileSize, tileSize, tileSize);
+
+          // House borders
+          if (GRID[y][x] === TILE_SAFE) {
+            ctx.strokeStyle = (x < SIZE/2) ? 'rgba(59,130,246,.5)' : 'rgba(239,68,68,.5)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x*tileSize+0.5, y*tileSize+0.5, tileSize-1, tileSize-1);
+          }
+
+          // Exit gate
+          if (GRID[y][x] === TILE_EXIT) {
+            ctx.fillStyle = COLORS.exit;
+            ctx.fillRect(x*tileSize+3, y*tileSize+3, tileSize-6, tileSize-6);
+          }
+          // Doors (bright colored when closed)
+          if (GRID[y][x] === TILE_DOOR_RED) {
+            ctx.fillStyle = openedDoors.red ? '#7f1d1d' : '#ef4444';
+            ctx.fillRect(x*tileSize+3, y*tileSize+3, tileSize-6, tileSize-6);
+          }
+          if (GRID[y][x] === TILE_DOOR_GREEN) {
+            ctx.fillStyle = openedDoors.green ? '#065f46' : '#22c55e';
+            ctx.fillRect(x*tileSize+3, y*tileSize+3, tileSize-6, tileSize-6);
+          }
+          if (GRID[y][x] === TILE_DOOR_BLUE) {
+            ctx.fillStyle = openedDoors.blue ? '#1e3a8a' : '#3b82f6';
+            ctx.fillRect(x*tileSize+3, y*tileSize+3, tileSize-6, tileSize-6);
+          }
+        }
+      }
+
+      // Barricades
+      for (const b of barricades) {
+        if (b.hp <= 0) continue;
+        ctx.fillStyle = COLORS.barricade;
+        ctx.fillRect(b.x*tileSize+2, b.y*tileSize+2, tileSize-4, tileSize-4);
+        // cracks indicator
+        ctx.strokeStyle = 'rgba(0,0,0,.3)';
+        ctx.beginPath();
+        ctx.moveTo(b.x*tileSize+4, b.y*tileSize+4);
+        ctx.lineTo(b.x*tileSize+tileSize-4, b.y*tileSize+tileSize-4);
+        ctx.stroke();
+      }
+
+      // Items
+      ctx.font = `${Math.floor(tileSize*.75)}px system-ui, emoji`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      items.forEach(it => {
+        let emoji = '❓';
+        if (it.type === ITEM_SWORD) emoji = '⚔️';
+        if (it.type === ITEM_SHIELD) emoji = '🛡️';
+        if (it.type === ITEM_FLASH) emoji = '🔦';
+        if (it.type === ITEM_BARR) emoji = '🧱';
+        if (it.type === ITEM_MED) emoji = '➕';
+        ctx.fillText(emoji, it.x*tileSize + tileSize/2, it.y*tileSize + tileSize/2 + 1);
+      });
+
+      // Zombies
+      zombies.forEach(z => {
+        ctx.fillStyle = '#84cc16'; // lime-400
+        ctx.beginPath();
+        ctx.arc(z.x*tileSize + tileSize/2, z.y*tileSize + tileSize/2, tileSize*0.34, 0, Math.PI*2);
+        ctx.fill();
+        ctx.fillStyle = '#0f172a';
+        ctx.fillText('🧟', z.x*tileSize + tileSize/2, z.y*tileSize + tileSize/2 + 1);
+      });
+
+      // Players
+      const p1 = players[0], p2 = players[1];
+      // P1
+      ctx.fillStyle = '#ef4444'; // red
+      ctx.beginPath();
+      ctx.arc(p1.x*tileSize + tileSize/2, p1.y*tileSize + tileSize/2, tileSize*0.36, 0, Math.PI*2);
+      ctx.fill();
+      ctx.fillStyle = '#0f172a';
+      ctx.fillText('🧍', p1.x*tileSize + tileSize/2, p1.y*tileSize + tileSize/2 + 1);
+
+      // P2
+      ctx.fillStyle = '#3b82f6'; // blue
+      ctx.beginPath();
+      ctx.arc(p2.x*tileSize + tileSize/2, p2.y*tileSize + tileSize/2, tileSize*0.36, 0, Math.PI*2);
+      ctx.fill();
+      ctx.fillStyle = '#0f172a';
+      ctx.fillText('🧍', p2.x*tileSize + tileSize/2, p2.y*tileSize + tileSize/2 + 1);
+
+      // Lighting: reveal radius (bigger with flashlight)
+      const v1 = p1.hasFlash ? 8 : 5;
+      const v2 = p2.hasFlash ? 8 : 5;
+      for (let y = 0; y < SIZE; y++) {
+        for (let x = 0; x < SIZE; x++) {
+          const d1 = Math.abs(x - p1.x) + Math.abs(y - p1.y);
+          const d2 = Math.abs(x - p2.x) + Math.abs(y - p2.y);
+          const visible = d1 <= v1 || d2 <= v2 || GRID[y][x] === TILE_SAFE;
+          if (visible) {
+            seen[y][x] = true;
+            continue;
+          }
+          ctx.fillStyle = 'rgba(0,0,0,0.75)';
+          ctx.fillRect(x*tileSize, y*tileSize, tileSize, tileSize);
+        }
+      }
+    }
+
+    function drawMinimap() {
+      const s = Math.min(mini.width, mini.height);
+      const px = Math.max(1, Math.floor(s / SIZE));
+      mctx.clearRect(0,0,mini.width,mini.height);
+      for (let y = 0; y < SIZE; y++) {
+        for (let x = 0; x < SIZE; x++) {
+          if (GRID[y][x] === TILE_WALL) mctx.fillStyle = '#111827';
+          else if (GRID[y][x] === TILE_SAFE) mctx.fillStyle = '#0ea5e9';
+          else if (GRID[y][x] === TILE_EXIT) mctx.fillStyle = '#f59e0b';
+          else mctx.fillStyle = '#1f2937';
+          mctx.fillRect(x*px, y*px, px, px);
+        }
+      }
+      // Barricades
+      mctx.fillStyle = '#9a6b39';
+      barricades.forEach(b => { if (b.hp>0) mctx.fillRect(b.x*px, b.y*px, px, px); });
+      // Items
+      mctx.fillStyle = '#22c55e';
+      items.forEach(it => mctx.fillRect(it.x*px, it.y*px, px, px));
+      // Zombies
+      mctx.fillStyle = '#84cc16';
+      zombies.forEach(z => mctx.fillRect(z.x*px, z.y*px, px, px));
+      // Players
+      mctx.fillStyle = '#ef4444';
+      const p1 = players[0], p2 = players[1];
+      mctx.fillRect(p1.x*px, p1.y*px, px, px);
+      mctx.fillStyle = '#3b82f6';
+      mctx.fillRect(p2.x*px, p2.y*px, px, px);
+    }
+
+    function loop() {
+      if (!gameRunning || paused) return;
+      tick++;
+
+      if (tick % 3 === 0) updatePlayers(); // movement pacing
+      if (tick % 6 === 0) updateZombies();
+
+      // Win?
+      if (bothAtExit()) {
+        gameRunning = false;
+        overlayWin.classList.remove('hidden');
+      }
+
+      updateHUD();
+      draw();
+      drawMinimap();
+
+      requestAnimationFrame(loop);
+    }
+
+    function startGame() {
+      paused = false;
+      gameRunning = true;
+      overlayStart.classList.add('hidden');
+      overlayWin.classList.add('hidden');
+
+      SIZE = parseInt(mazeSizeSel.value, 10);
+      fitCanvas();
+      generateMaze(SIZE);
+      setupEntities();
+      placeItems();
+      updateHUD();
+      draw();
+      drawMinimap();
+      tick = 0;
+      requestAnimationFrame(loop);
+    }
+
+    // Buttons
+    btnStart.addEventListener('click', startGame);
+    startBtnOverlay.addEventListener('click', startGame);
+    btnPause.addEventListener('click', () => {
+      paused = !paused;
+      btnPause.textContent = paused ? '▶ Resume' : '⏸ Pause';
+      if (!paused && gameRunning) requestAnimationFrame(loop);
+    });
+
+    // Init layout
+    fitCanvas();
+  </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96b90d39851f5938',t:'MTc1NDU5MzU5MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

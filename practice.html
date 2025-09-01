@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Uploader</title>
+</head>
+<body>
+    <div style="border: 1px solid black; border-radius: 4px; padding: 5px; margin-left: 500px; margin-right: 500px;">
+        <h1>Upload a file</h1>
+        <progress max="100" value="0" id="percent"></progress>
+        <p>Choose a file to upload.</p>
+        <button onclick="startUpload()">File 1</button>
+        <button onclick="startUpload()">File 2</button>
+        <button onclick="startUpload()">File 3</button>
+        <button onclick="startUpload()">File 4</button>
+        <h1 id="achievement"></h1>
+    </div>
+
+    <script>
+        let intervalId = null;
+
+        function startUpload() {
+            const percent = document.getElementById('percent');
+            const completion = document.getElementById('achievement');
+            percent.value = 0;
+            completion.innerHTML = '';
+
+            if (intervalId !== null) {
+                clearInterval(intervalId);
+            };
+
+            intervalId = setInterval(() => {
+                if (percent.value < 100) {
+                    percent.value += 0.5;
+                } else {
+                    clearInterval(intervalId);
+                    completion.innerHTML = 'File has been Uploaded';
+                }
+            }, 100);
+        }
+    </script>
+</body>
+</html>

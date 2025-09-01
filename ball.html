@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ragdoll Simulation</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+        canvas {
+            border: 1px solid black;
+            display: block;
+            background-color: white;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="ballCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('ballCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth - 20;
+        canvas.height = window.innerHeight - 20;
+
+        const gravity = 0.2;   // Gravity effect
+        const friction = 0.98; // Friction for bouncing
+
+        let ragdolls = [];
+        let dragPart = null;
+        let isDragging = false;
+
+        // Rectangle class for body parts
+        class Circle {
+            constructor(x, y, radius, color) {
+                this.x = x;
+                this.y = y;
+                this.radius = radius;
+                this.color = color;
+                this.dx = 0;
+                this.dy = 0;
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x - this.radius, this.y - this.radius, this.radius * 2, this.radius * 2);
+                ctx.closePath();
+            }
+
+            update() {
+                if (!isDragging || dragPart !== this) {
+                    // Apply gravity
+                    this.dy += gravity;
+
+                    // Apply friction
+                    this.dx *= friction;
+                    this.dy *= friction;
+
+                    // Move the rectangle
+                    this.x += this.dx;
+                    this.y += this.dy;
+
+                    // Bounce off walls
+                    if (this.x + this.radius > canvas.width || this.x - this.radius < 0) {
+                        this.dx = -this.dx * friction;
+                    }
+                    if (this.y + this.radius > canvas.height) {
+                        this.dy = -this.dy * friction;
+                        this.y = canvas.height - this.radius;
+                    }
+                }
+
+                this.draw();
+            }
+        }
+
+        // Constraint class to connect body parts
+        class Constraint {
+            constructor(circleA, circleB, length) {
+                this.circleA = circleA;
+                this.circleB = circleB;
+                this.length = length;
+            }
+
+            update() {
+                const dx = this.circleB.x - this.circleA.x;
+                const dy = this.circleB.y - this.circleA.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const difference = this.length - distance;
+                const percent = difference / distance / 2;
+                const offsetX = dx * percent;
+                const offsetY = dy * percent;
+
+                if (!isDragging || dragPart !== this.circleA) {
+                    this.circleA.x -= offsetX;
+                    this.circleA.y -= offsetY;
+                }
+                if (!isDragging || dragPart !== this.circleB) {
+                    this.circleB.x += offsetX;
+                    this.circleB.y += offsetY;
+                }
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.moveTo(this.circleA.x, this.circleA.y);
+                ctx.lineTo(this.circleB.x, this.circleB.y);
+                ctx.strokeStyle = 'black';
+                ctx.stroke();
+                ctx.closePath();
+            }
+        }
+
+        // Ragdoll class
+        class Ragdoll {
+            constructor(x, y) {
+                const headRadius = 20;
+                const bodyRadius = 15;
+
+                // Create body parts
+                this.head = new Circle(x, y, headRadius, 'red');
+                this.body = new Circle(x, y + 50, bodyRadius, 'blue');
+                this.leftArm = new Circle(x - 30, y + 50, bodyRadius, 'green');
+                this.rightArm = new Circle(x + 30, y + 50, bodyRadius, 'green');
+                this.leftLeg = new Circle(x - 20, y + 100, bodyRadius, 'yellow');
+                this.rightLeg = new Circle(x + 20, y + 100, bodyRadius, 'yellow');
+
+                // Create constraints
+                this.constraints = [
+                    new Constraint(this.head, this.body, 50),
+                    new Constraint(this.body, this.leftArm, 30),
+                    new Constraint(this.body, this.rightArm, 30),
+                    new Constraint(this.body, this.leftLeg, 50),
+                    new Constraint(this.body, this.rightLeg, 50),
+                ];
+
+                this.parts = [this.head, this.body, this.leftArm, this.rightArm, this.leftLeg, this.rightLeg];
+            }
+
+            update() {
+                this.parts.forEach(part => part.update());
+                this.constraints.forEach(constraint => constraint.update());
+            }
+
+            draw() {
+                this.constraints.forEach(constraint => constraint.draw());
+                this.parts.forEach(part => part.draw());
+            }
+        }
+
+        // Create a new ragdoll on mouse click
+        canvas.addEventListener('click', (e) => {
+            const x = e.clientX;
+            const y = e.clientY;
+
+            const newRagdoll = new Ragdoll(x, y);
+            ragdolls.push(newRagdoll);
+        });
+
+        // Check if a body part is clicked and start dragging
+        canvas.addEventListener('mousedown', (e) => {
+            const mouseX = e.clientX;
+            const mouseY = e.clientY;
+
+            ragdolls.forEach(ragdoll => {
+                ragdoll.parts.forEach(part => {
+                    const dist = Math.sqrt((mouseX - part.x) ** 2 + (mouseY - part.y) ** 2);
+                    if (dist <= part.radius) {
+                        dragPart = part;
+                        isDragging = true;
+                    }
+                });
+            });
+        });
+
+        // Update body part position during dragging
+        canvas.addEventListener('mousemove', (e) => {
+            if (isDragging && dragPart) {
+                dragPart.x = e.clientX;
+                dragPart.y = e.clientY;
+                dragPart.dx = 0;  // Reset velocity when dragging
+                dragPart.dy = 0;
+            }
+        });
+
+        // Stop dragging when mouse is released
+        canvas.addEventListener('mouseup', () => {
+            isDragging = false;
+            dragPart = null;
+        });
+
+        // Animation loop
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ragdolls.forEach(ragdoll => {
+                ragdoll.update();
+                ragdoll.draw();
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();  // Start animation
+    </script>
+</body>
+</html>

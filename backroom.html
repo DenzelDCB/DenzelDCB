@@ -1,0 +1,1957 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backrooms: Infinite 2-Player Split Screen</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #fff;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+        }
+
+        .player-screen {
+            position: relative;
+            width: 50vw;
+            height: 100vh;
+            overflow: hidden;
+            border-right: 2px solid #444;
+        }
+
+        .player-screen:last-child {
+            border-right: none;
+        }
+
+        .game-area {
+            position: relative;
+            width: 10000px;
+            height: 10000px;
+            background-image: 
+                repeating-linear-gradient(90deg, #222 0px, #222 1px, transparent 1px, transparent 30px),
+                repeating-linear-gradient(0deg, #222 0px, #222 1px, transparent 1px, transparent 30px);
+            background-color: #1a1a1a;
+            transform-origin: 0 0;
+            transition: transform 0.1s ease;
+        }
+
+        .maze-wall {
+            position: absolute;
+            background: linear-gradient(45deg, #333, #444);
+            border: 1px solid #555;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .room {
+            position: absolute;
+            border: 2px solid #444;
+            background: rgba(30, 30, 30, 0.8);
+            border-radius: 5px;
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.7);
+        }
+
+        .room.safe {
+            border-color: #006400;
+            background: rgba(0, 50, 0, 0.3);
+        }
+
+        .room.danger {
+            border-color: #8b0000;
+            background: rgba(50, 0, 0, 0.3);
+        }
+
+        .player {
+            position: absolute;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            z-index: 15;
+        }
+
+        .player.player1 {
+            background: radial-gradient(circle, #00ff00, #008800);
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.6);
+        }
+
+        .player.player2 {
+            background: radial-gradient(circle, #0080ff, #004488);
+            box-shadow: 0 0 15px rgba(0, 128, 255, 0.6);
+        }
+
+        .player.dead {
+            opacity: 0.2;
+            filter: grayscale(100%);
+        }
+
+        .enemy {
+            position: absolute;
+            width: 35px;
+            height: 35px;
+            background: radial-gradient(circle, #ff0000, #880000);
+            border-radius: 50%;
+            border: 3px solid #fff;
+            z-index: 14;
+            box-shadow: 0 0 25px rgba(255, 0, 0, 0.8);
+            animation: enemyPulse 1s infinite alternate;
+        }
+
+        @keyframes enemyPulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.15); }
+        }
+
+        .item {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            cursor: pointer;
+            z-index: 12;
+            animation: itemGlow 2s infinite alternate;
+        }
+
+        /* Attack Items */
+        .sword { background: radial-gradient(circle, #c0c0c0, #808080); }
+        .bow { background: radial-gradient(circle, #8b4513, #654321); }
+        .bomb { background: radial-gradient(circle, #ff4500, #8b0000); }
+        .lightning { background: radial-gradient(circle, #ffff00, #ffd700); }
+
+        /* Defense Items */
+        .shield { background: radial-gradient(circle, #4169e1, #191970); }
+        .armor { background: radial-gradient(circle, #696969, #2f4f4f); }
+        .invisibility { background: radial-gradient(circle, #dda0dd, #9370db); }
+
+        /* Health Items */
+        .health-small { background: radial-gradient(circle, #ff69b4, #dc143c); }
+        .health-large { background: radial-gradient(circle, #ff1493, #b22222); }
+        .health-max { background: radial-gradient(circle, #ff0000, #8b0000); }
+
+        /* Trap Items */
+        .spike-trap { background: radial-gradient(circle, #8b4513, #654321); }
+        .poison-trap { background: radial-gradient(circle, #32cd32, #228b22); }
+        .freeze-trap { background: radial-gradient(circle, #87ceeb, #4682b4); }
+
+        /* Keys and Special Items */
+        .key-red { background: radial-gradient(circle, #ff0000, #8b0000); }
+        .key-blue { background: radial-gradient(circle, #0000ff, #000080); }
+        .key-gold { background: radial-gradient(circle, #ffd700, #b8860b); }
+        .teleport { background: radial-gradient(circle, #9400d3, #4b0082); }
+
+        @keyframes itemGlow {
+            from { box-shadow: 0 0 8px currentColor; }
+            to { box-shadow: 0 0 16px currentColor; }
+        }
+
+        .trap {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            z-index: 5;
+            opacity: 0.7;
+        }
+
+        .trap.spike { background: radial-gradient(circle, #654321, #8b4513); }
+        .trap.poison { background: radial-gradient(circle, #32cd32, #228b22); }
+        .trap.freeze { background: radial-gradient(circle, #87ceeb, #4682b4); }
+
+        .projectile {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #ffff00;
+            border-radius: 50%;
+            z-index: 13;
+            box-shadow: 0 0 10px #ffff00;
+        }
+
+        .player-hud {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 10px;
+            border-radius: 8px;
+            border: 2px solid #444;
+            z-index: 100;
+            min-width: 200px;
+            font-size: 12px;
+        }
+
+        .health-bar {
+            width: 100%;
+            height: 12px;
+            background: #333;
+            border: 1px solid #666;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 3px 0;
+        }
+
+        .health-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff0000, #ffff00, #00ff00);
+            transition: width 0.3s ease;
+        }
+
+        .inventory {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 3px;
+            margin-top: 8px;
+        }
+
+        .inventory-slot {
+            width: 25px;
+            height: 25px;
+            border: 2px solid #666;
+            border-radius: 3px;
+            background: rgba(50, 50, 50, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .inventory-slot.selected {
+            border-color: #00ff00;
+            box-shadow: 0 0 8px rgba(0, 255, 0, 0.5);
+        }
+
+        .inventory-item {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            border: 1px solid #fff;
+        }
+
+        .item-count {
+            position: absolute;
+            bottom: -3px;
+            right: -3px;
+            background: #000;
+            color: #fff;
+            font-size: 8px;
+            padding: 1px 2px;
+            border-radius: 2px;
+            min-width: 10px;
+            text-align: center;
+        }
+
+        .controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 8px;
+            border-radius: 8px;
+            border: 2px solid #444;
+            z-index: 100;
+            font-size: 10px;
+        }
+
+        .messages {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 8px;
+            border-radius: 8px;
+            border: 2px solid #444;
+            z-index: 100;
+            max-height: 80px;
+            overflow-y: auto;
+            font-size: 10px;
+        }
+
+        .message {
+            margin: 2px 0;
+            padding: 2px 5px;
+            border-radius: 2px;
+        }
+
+        .message.info { background: rgba(0, 100, 200, 0.3); }
+        .message.warning { background: rgba(200, 100, 0, 0.3); }
+        .message.danger { background: rgba(200, 0, 0, 0.3); }
+        .message.success { background: rgba(0, 200, 0, 0.3); }
+        .message.combat { background: rgba(150, 0, 150, 0.3); }
+
+        .minimap {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            width: 120px;
+            height: 90px;
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid #444;
+            border-radius: 8px;
+            z-index: 100;
+            overflow: hidden;
+        }
+
+        .minimap-player1 {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: #00ff00;
+            border-radius: 50%;
+        }
+
+        .minimap-player2 {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: #0080ff;
+            border-radius: 50%;
+        }
+
+        .minimap-enemy {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #ff0000;
+            border-radius: 50%;
+        }
+
+        .minimap-item {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            background: #ffff00;
+            border-radius: 50%;
+        }
+
+        #gameOver {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .game-over-content {
+            text-align: center;
+            background: rgba(20, 20, 20, 0.95);
+            padding: 40px;
+            border-radius: 15px;
+            border: 3px solid #444;
+            max-width: 500px;
+        }
+
+        button {
+            background: #444;
+            color: #fff;
+            border: 2px solid #666;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: inherit;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: #555;
+            border-color: #888;
+        }
+
+        .door {
+            position: absolute;
+            background: #654321;
+            border: 2px solid #8b4513;
+            border-radius: 3px;
+        }
+
+        .door.locked {
+            background: #8b0000;
+            border-color: #ff0000;
+        }
+
+        .door.open {
+            background: #006400;
+            border-color: #00ff00;
+        }
+
+        .effect {
+            position: absolute;
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        .damage-text {
+            color: #ff0000;
+            font-weight: bold;
+            font-size: 12px;
+            animation: damageFloat 1s ease-out forwards;
+        }
+
+        @keyframes damageFloat {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-30px); }
+        }
+
+        .heal-text {
+            color: #00ff00;
+            font-weight: bold;
+            font-size: 12px;
+            animation: healFloat 1s ease-out forwards;
+        }
+
+        @keyframes healFloat {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-30px); }
+        }
+
+        .screen-divider {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(to bottom, #444, #666, #444);
+            z-index: 200;
+            transform: translateX(-50%);
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div class="player-screen" id="screen1">
+            <div class="game-area" id="gameArea1"></div>
+            <div class="player-hud">
+                <div><strong>Player 1 (Green)</strong></div>
+                <div class="health-bar">
+                    <div class="health-fill" id="health1" style="width: 100%"></div>
+                </div>
+                <div>HP: <span id="hp1">100</span>/100</div>
+                <div>Score: <span id="score1">0</span></div>
+                <div class="inventory" id="inventory1"></div>
+            </div>
+            <div class="controls">
+                <div><strong>Player 1:</strong></div>
+                <div>WASD - Move</div>
+                <div>Q/E - Items</div>
+                <div>Space - Attack</div>
+            </div>
+            <div class="minimap" id="minimap1"></div>
+            <div class="messages" id="messages1" style="max-width: 300px;"></div>
+        </div>
+
+        <div class="player-screen" id="screen2">
+            <div class="game-area" id="gameArea2"></div>
+            <div class="player-hud">
+                <div><strong>Player 2 (Blue)</strong></div>
+                <div class="health-bar">
+                    <div class="health-fill" id="health2" style="width: 100%"></div>
+                </div>
+                <div>HP: <span id="hp2">100</span>/100</div>
+                <div>Score: <span id="score2">0</span></div>
+                <div class="inventory" id="inventory2"></div>
+            </div>
+            <div class="controls">
+                <div><strong>Player 2:</strong></div>
+                <div>Arrows - Move</div>
+                <div>N/M - Items</div>
+                <div>Enter - Attack</div>
+            </div>
+            <div class="minimap" id="minimap2"></div>
+            <div class="messages" id="messages2" style="max-width: 300px;"></div>
+        </div>
+
+        <div class="screen-divider"></div>
+
+        <div id="gameOver">
+            <div class="game-over-content">
+                <h2 id="gameOverTitle">Game Over</h2>
+                <p id="gameOverMessage"></p>
+                <div id="finalStats"></div>
+                <button onclick="restartGame()">Restart Game</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class Game {
+            constructor() {
+                this.players = [
+                    { 
+                        x: 5000, y: 5000, health: 100, maxHealth: 100, score: 0, 
+                        inventory: [], selectedSlot: 0, effects: [], 
+                        attackCooldown: 0, defenseBuff: 0, invisible: false,
+                        respawnTime: null
+                    },
+                    { 
+                        x: 5100, y: 5000, health: 100, maxHealth: 100, score: 0, 
+                        inventory: [], selectedSlot: 0, effects: [], 
+                        attackCooldown: 0, defenseBuff: 0, invisible: false,
+                        respawnTime: null
+                    }
+                ];
+                
+                this.enemies = [];
+                this.gameRunning = true;
+                this.keys = {};
+                this.cameras = [
+                    { x: 0, y: 0 },
+                    { x: 0, y: 0 }
+                ];
+                
+                // Infinite maze generation
+                this.mazeChunks = new Map(); // Store generated maze chunks
+                this.chunkSize = 1000;
+                this.loadedChunks = new Set();
+                
+                this.items = new Map(); // Store items by chunk
+                this.doors = [];
+                this.traps = [];
+                this.projectiles = [];
+                this.effects = [];
+                this.messages = [[], []]; // Separate messages for each player
+                
+                this.initializeGame();
+                this.setupEventListeners();
+                this.gameLoop();
+            }
+
+            initializeGame() {
+                this.createPlayerElements();
+                this.spawnInitialEnemies();
+                this.updateCameras();
+            }
+
+            createPlayerElements() {
+                // Create player elements in both screens
+                for (let screen = 1; screen <= 2; screen++) {
+                    const gameArea = document.getElementById(`gameArea${screen}`);
+                    
+                    // Create both players in each screen
+                    for (let player = 1; player <= 2; player++) {
+                        const playerEl = document.createElement('div');
+                        playerEl.className = `player player${player}`;
+                        playerEl.id = `player${player}_screen${screen}`;
+                        gameArea.appendChild(playerEl);
+                    }
+                }
+            }
+
+            spawnInitialEnemies() {
+                // Spawn a few enemies around the starting area
+                for (let i = 0; i < 5; i++) {
+                    this.spawnEnemy(
+                        4800 + Math.random() * 400,
+                        4800 + Math.random() * 400
+                    );
+                }
+            }
+
+            spawnEnemy(x, y) {
+                const enemy = {
+                    x: x, y: y, health: 200, maxHealth: 200,
+                    speed: 1.2, lastSeen: 0, target: 0, attackCooldown: 0,
+                    id: 'enemy_' + Date.now() + '_' + Math.random()
+                };
+
+                // Create enemy elements in both screens
+                for (let screen = 1; screen <= 2; screen++) {
+                    const gameArea = document.getElementById(`gameArea${screen}`);
+                    const enemyEl = document.createElement('div');
+                    enemyEl.className = 'enemy';
+                    enemyEl.id = `${enemy.id}_screen${screen}`;
+                    enemyEl.style.left = enemy.x + 'px';
+                    enemyEl.style.top = enemy.y + 'px';
+                    gameArea.appendChild(enemyEl);
+                }
+
+                this.enemies.push(enemy);
+            }
+
+            generateMazeChunk(chunkX, chunkY) {
+                const chunkKey = `${chunkX},${chunkY}`;
+                if (this.mazeChunks.has(chunkKey)) return;
+
+                const walls = [];
+                const rooms = [];
+                const items = [];
+                
+                const baseX = chunkX * this.chunkSize;
+                const baseY = chunkY * this.chunkSize;
+
+                // Generate procedural maze for this chunk
+                const seed = this.hashCode(chunkKey);
+                const rng = this.seededRandom(seed);
+
+                // Create maze walls using procedural generation
+                for (let i = 0; i < 15; i++) {
+                    const wallType = Math.floor(rng() * 4);
+                    let wall;
+                    
+                    switch (wallType) {
+                        case 0: // Horizontal wall
+                            wall = {
+                                x: baseX + rng() * (this.chunkSize - 200),
+                                y: baseY + rng() * (this.chunkSize - 20),
+                                width: 100 + rng() * 200,
+                                height: 20
+                            };
+                            break;
+                        case 1: // Vertical wall
+                            wall = {
+                                x: baseX + rng() * (this.chunkSize - 20),
+                                y: baseY + rng() * (this.chunkSize - 200),
+                                width: 20,
+                                height: 100 + rng() * 200
+                            };
+                            break;
+                        case 2: // L-shaped wall
+                            wall = {
+                                x: baseX + rng() * (this.chunkSize - 150),
+                                y: baseY + rng() * (this.chunkSize - 150),
+                                width: 150,
+                                height: 20
+                            };
+                            walls.push(wall);
+                            wall = {
+                                x: baseX + wall.x,
+                                y: baseY + wall.y,
+                                width: 20,
+                                height: 150
+                            };
+                            break;
+                        case 3: // Square room outline
+                            const roomSize = 80 + rng() * 120;
+                            const roomX = baseX + rng() * (this.chunkSize - roomSize);
+                            const roomY = baseY + rng() * (this.chunkSize - roomSize);
+                            
+                            // Room walls
+                            walls.push(
+                                { x: roomX, y: roomY, width: roomSize, height: 20 },
+                                { x: roomX, y: roomY, width: 20, height: roomSize },
+                                { x: roomX + roomSize - 20, y: roomY, width: 20, height: roomSize },
+                                { x: roomX, y: roomY + roomSize - 20, width: roomSize, height: 20 }
+                            );
+                            
+                            // Add room
+                            rooms.push({
+                                x: roomX + 20, y: roomY + 20,
+                                width: roomSize - 40, height: roomSize - 40,
+                                type: rng() > 0.5 ? 'safe' : 'danger'
+                            });
+                            break;
+                    }
+                    
+                    if (wall) walls.push(wall);
+                }
+
+                // Generate items for this chunk
+                const itemTypes = [
+                    'sword', 'bow', 'bomb', 'lightning',
+                    'shield', 'armor', 'invisibility',
+                    'health-small', 'health-large', 'health-max',
+                    'spike-trap', 'poison-trap', 'freeze-trap',
+                    'key-red', 'key-blue', 'key-gold', 'teleport'
+                ];
+
+                for (let i = 0; i < 8; i++) {
+                    const itemX = baseX + rng() * this.chunkSize;
+                    const itemY = baseY + rng() * this.chunkSize;
+                    const itemType = itemTypes[Math.floor(rng() * itemTypes.length)];
+                    
+                    items.push({
+                        x: itemX, y: itemY, type: itemType,
+                        id: `item_${chunkKey}_${i}`,
+                        collected: false, respawnTime: 0
+                    });
+                }
+
+                // Occasionally spawn enemies in new chunks
+                if (rng() > 0.7) {
+                    this.spawnEnemy(
+                        baseX + rng() * this.chunkSize,
+                        baseY + rng() * this.chunkSize
+                    );
+                }
+
+                this.mazeChunks.set(chunkKey, { walls, rooms, items });
+            }
+
+            loadChunksAroundPlayer(playerIndex) {
+                const player = this.players[playerIndex];
+                const chunkX = Math.floor(player.x / this.chunkSize);
+                const chunkY = Math.floor(player.y / this.chunkSize);
+
+                // Load 3x3 grid of chunks around player
+                for (let dx = -1; dx <= 1; dx++) {
+                    for (let dy = -1; dy <= 1; dy++) {
+                        const cx = chunkX + dx;
+                        const cy = chunkY + dy;
+                        const chunkKey = `${cx},${cy}`;
+                        
+                        if (!this.loadedChunks.has(chunkKey)) {
+                            this.generateMazeChunk(cx, cy);
+                            // Render chunk on both screens
+                            this.renderChunk(cx, cy, 1);
+                            this.renderChunk(cx, cy, 2);
+                            this.loadedChunks.add(chunkKey);
+                        }
+                    }
+                }
+            }
+
+            renderChunk(chunkX, chunkY, screenNum) {
+                const chunkKey = `${chunkX},${chunkY}`;
+                const chunk = this.mazeChunks.get(chunkKey);
+                if (!chunk) return;
+
+                const gameArea = document.getElementById(`gameArea${screenNum}`);
+
+                // Render walls
+                chunk.walls.forEach((wall, index) => {
+                    const wallEl = document.createElement('div');
+                    wallEl.className = 'maze-wall';
+                    wallEl.style.left = wall.x + 'px';
+                    wallEl.style.top = wall.y + 'px';
+                    wallEl.style.width = wall.width + 'px';
+                    wallEl.style.height = wall.height + 'px';
+                    wallEl.id = `wall_${chunkKey}_${index}_screen${screenNum}`;
+                    gameArea.appendChild(wallEl);
+                });
+
+                // Render rooms
+                chunk.rooms.forEach((room, index) => {
+                    const roomEl = document.createElement('div');
+                    roomEl.className = `room ${room.type}`;
+                    roomEl.style.left = room.x + 'px';
+                    roomEl.style.top = room.y + 'px';
+                    roomEl.style.width = room.width + 'px';
+                    roomEl.style.height = room.height + 'px';
+                    roomEl.id = `room_${chunkKey}_${index}_screen${screenNum}`;
+                    gameArea.appendChild(roomEl);
+                });
+
+                // Render items
+                chunk.items.forEach((item, index) => {
+                    if (item.collected) return;
+                    
+                    const itemEl = document.createElement('div');
+                    itemEl.className = `item ${item.type}`;
+                    itemEl.style.left = item.x + 'px';
+                    itemEl.style.top = item.y + 'px';
+                    itemEl.id = `${item.id}_screen${screenNum}`;
+                    gameArea.appendChild(itemEl);
+                });
+            }
+
+            hashCode(str) {
+                let hash = 0;
+                for (let i = 0; i < str.length; i++) {
+                    const char = str.charCodeAt(i);
+                    hash = ((hash << 5) - hash) + char;
+                    hash = hash & hash; // Convert to 32-bit integer
+                }
+                return Math.abs(hash);
+            }
+
+            seededRandom(seed) {
+                let state = seed;
+                return function() {
+                    state = (state * 1664525 + 1013904223) % 4294967296;
+                    return state / 4294967296;
+                };
+            }
+
+            setupEventListeners() {
+                document.addEventListener('keydown', (e) => {
+                    this.keys[e.key.toLowerCase()] = true;
+                    
+                    // Player 1 controls
+                    if (e.key.toLowerCase() === 'q') this.selectPreviousItem(0);
+                    if (e.key.toLowerCase() === 'e') this.selectNextItem(0);
+                    if (e.key === ' ') { e.preventDefault(); this.useItem(0); }
+                    
+                    // Player 2 controls
+                    if (e.key.toLowerCase() === 'n') this.selectPreviousItem(1);
+                    if (e.key.toLowerCase() === 'm') this.selectNextItem(1);
+                    if (e.key === 'Enter') { e.preventDefault(); this.useItem(1); }
+                    
+                    if (e.key === 'Escape') this.togglePause();
+                });
+
+                document.addEventListener('keyup', (e) => {
+                    this.keys[e.key.toLowerCase()] = false;
+                });
+            }
+
+            gameLoop() {
+                if (!this.gameRunning) return;
+
+                this.loadChunksForPlayers();
+                this.updatePlayers();
+                this.updateEnemies();
+                this.updateProjectiles();
+                this.updateTraps();
+                this.updateEffects();
+                this.checkCollisions();
+                this.checkPlayerRespawn();
+                this.updateCameras();
+                this.updateUI();
+                this.updateMinimaps();
+                this.respawnItems();
+
+                requestAnimationFrame(() => this.gameLoop());
+            }
+
+            loadChunksForPlayers() {
+                this.players.forEach((player, index) => {
+                    this.loadChunksAroundPlayer(index);
+                });
+            }
+
+            updatePlayers() {
+                const speed = 2.5;
+                
+                // Player 1 movement (WASD)
+                this.movePlayer(0, {
+                    up: this.keys['w'],
+                    down: this.keys['s'],
+                    left: this.keys['a'],
+                    right: this.keys['d']
+                }, speed);
+
+                // Player 2 movement (Arrow keys)
+                this.movePlayer(1, {
+                    up: this.keys['arrowup'],
+                    down: this.keys['arrowdown'],
+                    left: this.keys['arrowleft'],
+                    right: this.keys['arrowright']
+                }, speed);
+
+                // Update player positions on both screens
+                this.players.forEach((player, index) => {
+                    for (let screen = 1; screen <= 2; screen++) {
+                        const playerEl = document.getElementById(`player${index + 1}_screen${screen}`);
+                        if (playerEl) {
+                            playerEl.style.left = player.x + 'px';
+                            playerEl.style.top = player.y + 'px';
+                            
+                            // Update visual state
+                            if (player.health <= 0) {
+                                playerEl.classList.add('dead');
+                            } else {
+                                playerEl.classList.remove('dead');
+                                if (player.invisible > 0) {
+                                    playerEl.style.opacity = '0.3';
+                                } else {
+                                    playerEl.style.opacity = '1';
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Update cooldowns and effects
+                    if (player.attackCooldown > 0) player.attackCooldown--;
+                    if (player.defenseBuff > 0) player.defenseBuff--;
+                    if (player.invisible > 0) player.invisible--;
+                });
+            }
+
+            movePlayer(playerIndex, controls, speed) {
+                const player = this.players[playerIndex];
+                
+                // Dead players can't move
+                if (player.health <= 0) return;
+                
+                let newX = player.x;
+                let newY = player.y;
+
+                if (controls.up) newY -= speed;
+                if (controls.down) newY += speed;
+                if (controls.left) newX -= speed;
+                if (controls.right) newX += speed;
+
+                // Check wall collisions
+                if (!this.isWallCollision(newX, player.y, 25, 25)) {
+                    player.x = newX;
+                }
+                if (!this.isWallCollision(player.x, newY, 25, 25)) {
+                    player.y = newY;
+                }
+
+                // Check item collection
+                this.checkItemCollection(playerIndex);
+            }
+
+            updateEnemies() {
+                this.enemies.forEach((enemy, enemyIndex) => {
+                    // Find closest visible player
+                    let closestPlayer = 0;
+                    let closestDistance = Infinity;
+                    
+                    this.players.forEach((player, index) => {
+                        if (player.health <= 0 || player.invisible > 0) return;
+                        
+                        const distance = Math.sqrt(
+                            Math.pow(player.x - enemy.x, 2) + 
+                            Math.pow(player.y - enemy.y, 2)
+                        );
+                        
+                        if (distance < closestDistance) {
+                            closestDistance = distance;
+                            closestPlayer = index;
+                        }
+                    });
+
+                    const targetPlayer = this.players[closestPlayer];
+                    
+                    if (closestDistance < 300 && targetPlayer.health > 0) {
+                        enemy.lastSeen = Date.now();
+                        enemy.target = closestPlayer;
+                    }
+
+                    // Enemy movement
+                    if (Date.now() - enemy.lastSeen < 8000 && targetPlayer.health > 0) {
+                        const dx = targetPlayer.x - enemy.x;
+                        const dy = targetPlayer.y - enemy.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance > 0) {
+                            let moveX = (dx / distance) * enemy.speed;
+                            let moveY = (dy / distance) * enemy.speed;
+                            
+                            // Check wall collisions for enemy
+                            if (!this.isWallCollision(enemy.x + moveX, enemy.y, 35, 35)) {
+                                enemy.x += moveX;
+                            }
+                            if (!this.isWallCollision(enemy.x, enemy.y + moveY, 35, 35)) {
+                                enemy.y += moveY;
+                            }
+                        }
+                        
+                        // Enemy attack
+                        if (distance < 50 && enemy.attackCooldown <= 0) {
+                            this.enemyAttack(closestPlayer, enemyIndex);
+                            enemy.attackCooldown = 120; // 2 seconds at 60fps
+                        }
+                    } else {
+                        // Random movement when not chasing
+                        const moveX = (Math.random() - 0.5) * 2;
+                        const moveY = (Math.random() - 0.5) * 2;
+                        
+                        if (!this.isWallCollision(enemy.x + moveX, enemy.y, 35, 35)) {
+                            enemy.x += moveX;
+                        }
+                        if (!this.isWallCollision(enemy.x, enemy.y + moveY, 35, 35)) {
+                            enemy.y += moveY;
+                        }
+                    }
+
+                    if (enemy.attackCooldown > 0) enemy.attackCooldown--;
+
+                    // Update enemy position on both screens
+                    for (let screen = 1; screen <= 2; screen++) {
+                        const enemyEl = document.getElementById(`${enemy.id}_screen${screen}`);
+                        if (enemyEl) {
+                            enemyEl.style.left = enemy.x + 'px';
+                            enemyEl.style.top = enemy.y + 'px';
+                        }
+                    }
+                });
+            }
+
+            enemyAttack(playerIndex, enemyIndex) {
+                const player = this.players[playerIndex];
+                const damage = Math.max(5, 25 - player.defenseBuff);
+                
+                this.damagePlayer(playerIndex, damage);
+                this.addMessage(`Enemy attacks Player ${playerIndex + 1} for ${damage} damage!`, 'danger', playerIndex);
+            }
+
+            checkItemCollection(playerIndex) {
+                const player = this.players[playerIndex];
+                
+                // Check items in nearby chunks
+                const chunkX = Math.floor(player.x / this.chunkSize);
+                const chunkY = Math.floor(player.y / this.chunkSize);
+                
+                for (let dx = -1; dx <= 1; dx++) {
+                    for (let dy = -1; dy <= 1; dy++) {
+                        const chunkKey = `${chunkX + dx},${chunkY + dy}`;
+                        const chunk = this.mazeChunks.get(chunkKey);
+                        if (!chunk) continue;
+                        
+                        chunk.items.forEach(item => {
+                            if (item.collected) return;
+                            
+                            const distance = Math.sqrt(
+                                Math.pow(player.x - item.x, 2) + 
+                                Math.pow(player.y - item.y, 2)
+                            );
+                            
+                            if (distance < 30) {
+                                this.collectItem(playerIndex, item);
+                            }
+                        });
+                    }
+                }
+            }
+
+            collectItem(playerIndex, item) {
+                const player = this.players[playerIndex];
+                
+                // Check if inventory is full (16 slots)
+                if (player.inventory.length >= 16) {
+                    this.addMessage(`Inventory full!`, 'warning', playerIndex);
+                    return;
+                }
+                
+                item.collected = true;
+                item.respawnTime = Date.now() + 30000; // Respawn in 30 seconds
+                
+                // Add to inventory or stack if same type
+                const existingItem = player.inventory.find(invItem => invItem.type === item.type);
+                if (existingItem) {
+                    existingItem.count++;
+                } else {
+                    player.inventory.push({ type: item.type, count: 1 });
+                }
+                
+                player.score += this.getItemValue(item.type);
+                
+                // Hide item on both screens
+                for (let screen = 1; screen <= 2; screen++) {
+                    const itemEl = document.getElementById(`${item.id}_screen${screen}`);
+                    if (itemEl) itemEl.style.display = 'none';
+                }
+                
+                this.addMessage(`Collected ${item.type}!`, 'success', playerIndex);
+                this.updateInventoryDisplay();
+            }
+
+            getItemValue(itemType) {
+                const values = {
+                    'sword': 50, 'bow': 60, 'bomb': 80, 'lightning': 100,
+                    'shield': 40, 'armor': 70, 'invisibility': 90,
+                    'health-small': 20, 'health-large': 50, 'health-max': 100,
+                    'spike-trap': 30, 'poison-trap': 40, 'freeze-trap': 50,
+                    'key-red': 200, 'key-blue': 200, 'key-gold': 300,
+                    'teleport': 150
+                };
+                return values[itemType] || 10;
+            }
+
+            selectPreviousItem(playerIndex) {
+                const player = this.players[playerIndex];
+                if (player.inventory.length === 0) return;
+                
+                player.selectedSlot = (player.selectedSlot - 1 + player.inventory.length) % player.inventory.length;
+                this.updateInventoryDisplay();
+            }
+
+            selectNextItem(playerIndex) {
+                const player = this.players[playerIndex];
+                if (player.inventory.length === 0) return;
+                
+                player.selectedSlot = (player.selectedSlot + 1) % player.inventory.length;
+                this.updateInventoryDisplay();
+            }
+
+            useItem(playerIndex) {
+                const player = this.players[playerIndex];
+                
+                // Dead players can't use items
+                if (player.health <= 0) return;
+                
+                if (player.inventory.length === 0 || player.attackCooldown > 0) return;
+                
+                const selectedItem = player.inventory[player.selectedSlot];
+                if (!selectedItem || selectedItem.count <= 0) return;
+                
+                this.activateItem(playerIndex, selectedItem.type);
+                
+                selectedItem.count--;
+                if (selectedItem.count <= 0) {
+                    player.inventory.splice(player.selectedSlot, 1);
+                    player.selectedSlot = Math.max(0, player.selectedSlot - 1);
+                }
+                
+                this.updateInventoryDisplay();
+            }
+
+            activateItem(playerIndex, itemType) {
+                const player = this.players[playerIndex];
+                
+                switch (itemType) {
+                    case 'sword':
+                        this.meleeAttack(playerIndex, 40);
+                        player.attackCooldown = 30;
+                        break;
+                    case 'bow':
+                        this.rangedAttack(playerIndex, 25);
+                        player.attackCooldown = 45;
+                        break;
+                    case 'bomb':
+                        this.bombAttack(playerIndex, 60);
+                        player.attackCooldown = 90;
+                        break;
+                    case 'lightning':
+                        this.lightningAttack(playerIndex, 80);
+                        player.attackCooldown = 120;
+                        break;
+                    case 'shield':
+                        player.defenseBuff = 300; // 5 seconds
+                        this.addMessage(`Shield activated!`, 'info', playerIndex);
+                        break;
+                    case 'armor':
+                        player.defenseBuff = 600; // 10 seconds
+                        this.addMessage(`Armor equipped!`, 'info', playerIndex);
+                        break;
+                    case 'invisibility':
+                        player.invisible = 300; // 5 seconds
+                        this.addMessage(`Became invisible!`, 'info', playerIndex);
+                        break;
+                    case 'health-small':
+                        this.healPlayer(playerIndex, 25);
+                        break;
+                    case 'health-large':
+                        this.healPlayer(playerIndex, 50);
+                        break;
+                    case 'health-max':
+                        this.healPlayer(playerIndex, 100);
+                        break;
+                    case 'spike-trap':
+                        this.placeTrap(playerIndex, 'spike');
+                        break;
+                    case 'poison-trap':
+                        this.placeTrap(playerIndex, 'poison');
+                        break;
+                    case 'freeze-trap':
+                        this.placeTrap(playerIndex, 'freeze');
+                        break;
+                    case 'teleport':
+                        this.teleportPlayer(playerIndex);
+                        break;
+                }
+            }
+
+            meleeAttack(playerIndex, damage) {
+                const player = this.players[playerIndex];
+                
+                // Check enemy collisions
+                this.enemies.forEach((enemy, enemyIndex) => {
+                    const distance = Math.sqrt(
+                        Math.pow(player.x - enemy.x, 2) + 
+                        Math.pow(player.y - enemy.y, 2)
+                    );
+                    
+                    if (distance < 60) {
+                        enemy.health -= damage;
+                        this.addMessage(`Sword attack hits enemy for ${damage}!`, 'combat', playerIndex);
+                        this.createDamageText(enemy.x, enemy.y, damage);
+                        
+                        if (enemy.health <= 0) {
+                            this.enemyDefeated(enemyIndex);
+                        }
+                    }
+                });
+                
+                // Check other player collision
+                const otherPlayer = playerIndex === 0 ? 1 : 0;
+                const playerDistance = Math.sqrt(
+                    Math.pow(player.x - this.players[otherPlayer].x, 2) + 
+                    Math.pow(player.y - this.players[otherPlayer].y, 2)
+                );
+                
+                if (playerDistance < 50) {
+                    this.damagePlayer(otherPlayer, Math.floor(damage * 0.7));
+                    this.addMessage(`Attacked by other player!`, 'combat', otherPlayer);
+                }
+            }
+
+            rangedAttack(playerIndex, damage) {
+                const player = this.players[playerIndex];
+                
+                // Find nearest target
+                let targetX = player.x + 100; // Default forward
+                let targetY = player.y;
+                let minDistance = Infinity;
+                
+                // Check enemies
+                this.enemies.forEach(enemy => {
+                    const distance = Math.sqrt(Math.pow(player.x - enemy.x, 2) + Math.pow(player.y - enemy.y, 2));
+                    if (distance < minDistance && distance < 400) {
+                        minDistance = distance;
+                        targetX = enemy.x;
+                        targetY = enemy.y;
+                    }
+                });
+                
+                // Check other player
+                const otherPlayer = playerIndex === 0 ? 1 : 0;
+                const playerDistance = Math.sqrt(Math.pow(player.x - this.players[otherPlayer].x, 2) + Math.pow(player.y - this.players[otherPlayer].y, 2));
+                if (playerDistance < minDistance && playerDistance < 400) {
+                    targetX = this.players[otherPlayer].x;
+                    targetY = this.players[otherPlayer].y;
+                }
+                
+                this.createProjectile(player.x, player.y, targetX, targetY, damage, playerIndex);
+                this.addMessage(`Fired arrow!`, 'combat', playerIndex);
+            }
+
+            bombAttack(playerIndex, damage) {
+                const player = this.players[playerIndex];
+                const bombRadius = 80;
+                
+                // Check enemies
+                this.enemies.forEach((enemy, enemyIndex) => {
+                    const distance = Math.sqrt(
+                        Math.pow(player.x - enemy.x, 2) + 
+                        Math.pow(player.y - enemy.y, 2)
+                    );
+                    
+                    if (distance < bombRadius) {
+                        enemy.health -= damage;
+                        this.addMessage(`Bomb hits enemy for ${damage}!`, 'combat', playerIndex);
+                        this.createDamageText(enemy.x, enemy.y, damage);
+                        
+                        if (enemy.health <= 0) {
+                            this.enemyDefeated(enemyIndex);
+                        }
+                    }
+                });
+                
+                // Check other player
+                const otherPlayer = playerIndex === 0 ? 1 : 0;
+                const playerDistance = Math.sqrt(
+                    Math.pow(player.x - this.players[otherPlayer].x, 2) + 
+                    Math.pow(player.y - this.players[otherPlayer].y, 2)
+                );
+                
+                if (playerDistance < bombRadius) {
+                    this.damagePlayer(otherPlayer, Math.floor(damage * 0.8));
+                    this.addMessage(`Hit by bomb!`, 'combat', otherPlayer);
+                }
+                
+                this.createExplosionEffect(player.x, player.y);
+            }
+
+            lightningAttack(playerIndex, damage) {
+                const player = this.players[playerIndex];
+                const lightningRange = 150;
+                
+                // Check enemies
+                this.enemies.forEach((enemy, enemyIndex) => {
+                    const distance = Math.sqrt(
+                        Math.pow(player.x - enemy.x, 2) + 
+                        Math.pow(player.y - enemy.y, 2)
+                    );
+                    
+                    if (distance < lightningRange) {
+                        enemy.health -= damage;
+                        this.addMessage(`Lightning strikes enemy for ${damage}!`, 'combat', playerIndex);
+                        this.createDamageText(enemy.x, enemy.y, damage);
+                        
+                        if (enemy.health <= 0) {
+                            this.enemyDefeated(enemyIndex);
+                        }
+                    }
+                });
+                
+                // Check other player
+                const otherPlayer = playerIndex === 0 ? 1 : 0;
+                const playerDistance = Math.sqrt(
+                    Math.pow(player.x - this.players[otherPlayer].x, 2) + 
+                    Math.pow(player.y - this.players[otherPlayer].y, 2)
+                );
+                
+                if (playerDistance < lightningRange) {
+                    this.damagePlayer(otherPlayer, Math.floor(damage * 0.6));
+                    this.addMessage(`Struck by lightning!`, 'combat', otherPlayer);
+                }
+                
+                this.addMessage(`Cast lightning!`, 'combat', playerIndex);
+            }
+
+            placeTrap(playerIndex, trapType) {
+                const player = this.players[playerIndex];
+                
+                const trap = {
+                    x: player.x,
+                    y: player.y,
+                    type: trapType,
+                    owner: playerIndex,
+                    duration: 1800, // 30 seconds
+                    triggered: false,
+                    id: 'trap_' + Date.now()
+                };
+                
+                // Create trap elements on both screens
+                for (let screen = 1; screen <= 2; screen++) {
+                    const gameArea = document.getElementById(`gameArea${screen}`);
+                    const trapEl = document.createElement('div');
+                    trapEl.className = `trap ${trapType}`;
+                    trapEl.style.left = trap.x + 'px';
+                    trapEl.style.top = trap.y + 'px';
+                    trapEl.id = `${trap.id}_screen${screen}`;
+                    gameArea.appendChild(trapEl);
+                }
+                
+                this.traps.push(trap);
+                this.addMessage(`Placed ${trapType} trap!`, 'info', playerIndex);
+            }
+
+            teleportPlayer(playerIndex) {
+                const player = this.players[playerIndex];
+                
+                // Teleport to a random location within reasonable range
+                const angle = Math.random() * Math.PI * 2;
+                const distance = 200 + Math.random() * 300;
+                
+                let newX = player.x + Math.cos(angle) * distance;
+                let newY = player.y + Math.sin(angle) * distance;
+                
+                // Try to find a safe location
+                let attempts = 0;
+                while (this.isWallCollision(newX, newY, 25, 25) && attempts < 20) {
+                    const newAngle = Math.random() * Math.PI * 2;
+                    newX = player.x + Math.cos(newAngle) * distance;
+                    newY = player.y + Math.sin(newAngle) * distance;
+                    attempts++;
+                }
+                
+                if (attempts < 20) {
+                    player.x = newX;
+                    player.y = newY;
+                    this.addMessage(`Teleported!`, 'info', playerIndex);
+                }
+            }
+
+            createProjectile(startX, startY, targetX, targetY, damage, owner) {
+                const dx = targetX - startX;
+                const dy = targetY - startY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                const projectile = {
+                    x: startX,
+                    y: startY,
+                    vx: (dx / distance) * 5,
+                    vy: (dy / distance) * 5,
+                    damage: damage,
+                    owner: owner,
+                    life: 120, // 2 seconds
+                    id: 'proj_' + Date.now()
+                };
+                
+                // Create projectile elements on both screens
+                for (let screen = 1; screen <= 2; screen++) {
+                    const gameArea = document.getElementById(`gameArea${screen}`);
+                    const projEl = document.createElement('div');
+                    projEl.className = 'projectile';
+                    projEl.style.left = projectile.x + 'px';
+                    projEl.style.top = projectile.y + 'px';
+                    projEl.id = `${projectile.id}_screen${screen}`;
+                    gameArea.appendChild(projEl);
+                }
+                
+                this.projectiles.push(projectile);
+            }
+
+            updateProjectiles() {
+                this.projectiles.forEach((proj, index) => {
+                    proj.x += proj.vx;
+                    proj.y += proj.vy;
+                    proj.life--;
+                    
+                    // Update position on both screens
+                    for (let screen = 1; screen <= 2; screen++) {
+                        const projEl = document.getElementById(`${proj.id}_screen${screen}`);
+                        if (projEl) {
+                            projEl.style.left = proj.x + 'px';
+                            projEl.style.top = proj.y + 'px';
+                        }
+                    }
+                    
+                    // Check collisions
+                    let hit = false;
+                    
+                    // Check enemy collisions
+                    this.enemies.forEach((enemy, enemyIndex) => {
+                        const distance = Math.sqrt(
+                            Math.pow(proj.x - enemy.x, 2) + 
+                            Math.pow(proj.y - enemy.y, 2)
+                        );
+                        
+                        if (distance < 25) {
+                            enemy.health -= proj.damage;
+                            this.createDamageText(enemy.x, enemy.y, proj.damage);
+                            this.addMessage(`Arrow hits enemy for ${proj.damage}!`, 'combat', proj.owner);
+                            hit = true;
+                            
+                            if (enemy.health <= 0) {
+                                this.enemyDefeated(enemyIndex);
+                            }
+                        }
+                    });
+                    
+                    // Check player collisions
+                    this.players.forEach((player, playerIndex) => {
+                        if (playerIndex === proj.owner || hit) return;
+                        
+                        const distance = Math.sqrt(
+                            Math.pow(proj.x - player.x, 2) + 
+                            Math.pow(proj.y - player.y, 2)
+                        );
+                        
+                        if (distance < 20) {
+                            this.damagePlayer(playerIndex, proj.damage);
+                            this.addMessage(`Hit by arrow!`, 'combat', playerIndex);
+                            hit = true;
+                        }
+                    });
+                    
+                    // Check wall collision
+                    if (this.isWallCollision(proj.x, proj.y, 8, 8)) {
+                        hit = true;
+                    }
+                    
+                    // Remove projectile if hit or expired
+                    if (hit || proj.life <= 0) {
+                        for (let screen = 1; screen <= 2; screen++) {
+                            const projEl = document.getElementById(`${proj.id}_screen${screen}`);
+                            if (projEl) projEl.remove();
+                        }
+                        this.projectiles.splice(index, 1);
+                    }
+                });
+            }
+
+            updateTraps() {
+                this.traps.forEach((trap, index) => {
+                    trap.duration--;
+                    
+                    if (trap.duration <= 0) {
+                        for (let screen = 1; screen <= 2; screen++) {
+                            const trapEl = document.getElementById(`${trap.id}_screen${screen}`);
+                            if (trapEl) trapEl.remove();
+                        }
+                        this.traps.splice(index, 1);
+                        return;
+                    }
+                    
+                    if (trap.triggered) return;
+                    
+                    // Check enemy collisions
+                    this.enemies.forEach((enemy, enemyIndex) => {
+                        const distance = Math.sqrt(
+                            Math.pow(trap.x - enemy.x, 2) + 
+                            Math.pow(trap.y - enemy.y, 2)
+                        );
+                        
+                        if (distance < 35) {
+                            this.triggerTrap(trap, 'enemy', enemyIndex);
+                        }
+                    });
+                    
+                    // Check player collisions
+                    this.players.forEach((player, playerIndex) => {
+                        if (playerIndex === trap.owner || trap.triggered) return;
+                        
+                        const distance = Math.sqrt(
+                            Math.pow(trap.x - player.x, 2) + 
+                            Math.pow(trap.y - player.y, 2)
+                        );
+                        
+                        if (distance < 30) {
+                            this.triggerTrap(trap, 'player', playerIndex);
+                        }
+                    });
+                });
+            }
+
+            triggerTrap(trap, targetType, targetIndex) {
+                trap.triggered = true;
+                
+                // Update trap appearance on both screens
+                for (let screen = 1; screen <= 2; screen++) {
+                    const trapEl = document.getElementById(`${trap.id}_screen${screen}`);
+                    if (trapEl) trapEl.style.opacity = '0.3';
+                }
+                
+                let damage = 0;
+                let effect = '';
+                
+                switch (trap.type) {
+                    case 'spike':
+                        damage = 30;
+                        effect = 'pierced';
+                        break;
+                    case 'poison':
+                        damage = 20;
+                        effect = 'poisoned';
+                        break;
+                    case 'freeze':
+                        damage = 15;
+                        effect = 'frozen';
+                        break;
+                }
+                
+                if (targetType === 'enemy') {
+                    const enemy = this.enemies[targetIndex];
+                    enemy.health -= damage;
+                    this.createDamageText(enemy.x, enemy.y, damage);
+                    this.addMessage(`Enemy ${effect} by trap for ${damage} damage!`, 'combat', trap.owner);
+                    
+                    if (enemy.health <= 0) {
+                        this.enemyDefeated(targetIndex);
+                    }
+                } else if (targetType === 'player') {
+                    this.damagePlayer(targetIndex, damage);
+                    this.addMessage(`${effect} by trap!`, 'combat', targetIndex);
+                }
+            }
+
+            damagePlayer(playerIndex, damage) {
+                const player = this.players[playerIndex];
+                const actualDamage = Math.max(1, damage - Math.floor(player.defenseBuff / 10));
+                
+                player.health -= actualDamage;
+                this.createDamageText(player.x, player.y, actualDamage);
+                
+                if (player.health <= 0) {
+                    player.health = 0;
+                    player.respawnTime = Date.now() + 10000; // Respawn in 10 seconds
+                    this.addMessage(`Defeated! Respawning in 10 seconds...`, 'danger', playerIndex);
+                    
+                    // Check if both players are dead
+                    if (this.players.every(p => p.health <= 0)) {
+                        this.gameOver('Both players have been defeated in the infinite backrooms...');
+                    }
+                }
+            }
+
+            healPlayer(playerIndex, amount) {
+                const player = this.players[playerIndex];
+                const healAmount = Math.min(amount, player.maxHealth - player.health);
+                
+                player.health += healAmount;
+                this.createHealText(player.x, player.y, healAmount);
+                this.addMessage(`Healed for ${healAmount} HP!`, 'success', playerIndex);
+            }
+
+            createDamageText(x, y, damage) {
+                for (let screen = 1; screen <= 2; screen++) {
+                    const gameArea = document.getElementById(`gameArea${screen}`);
+                    const textEl = document.createElement('div');
+                    textEl.className = 'effect damage-text';
+                    textEl.textContent = `-${damage}`;
+                    textEl.style.left = x + 'px';
+                    textEl.style.top = y + 'px';
+                    gameArea.appendChild(textEl);
+                    
+                    setTimeout(() => textEl.remove(), 1000);
+                }
+            }
+
+            createHealText(x, y, heal) {
+                for (let screen = 1; screen <= 2; screen++) {
+                    const gameArea = document.getElementById(`gameArea${screen}`);
+                    const textEl = document.createElement('div');
+                    textEl.className = 'effect heal-text';
+                    textEl.textContent = `+${heal}`;
+                    textEl.style.left = x + 'px';
+                    textEl.style.top = y + 'px';
+                    gameArea.appendChild(textEl);
+                    
+                    setTimeout(() => textEl.remove(), 1000);
+                }
+            }
+
+            createExplosionEffect(x, y) {
+                for (let screen = 1; screen <= 2; screen++) {
+                    const gameArea = document.getElementById(`gameArea${screen}`);
+                    const explosionEl = document.createElement('div');
+                    explosionEl.style.position = 'absolute';
+                    explosionEl.style.left = (x - 40) + 'px';
+                    explosionEl.style.top = (y - 40) + 'px';
+                    explosionEl.style.width = '80px';
+                    explosionEl.style.height = '80px';
+                    explosionEl.style.background = 'radial-gradient(circle, #ff4500, #ff0000, transparent)';
+                    explosionEl.style.borderRadius = '50%';
+                    explosionEl.style.zIndex = '20';
+                    explosionEl.style.animation = 'explosion 0.5s ease-out forwards';
+                    gameArea.appendChild(explosionEl);
+                    
+                    setTimeout(() => explosionEl.remove(), 500);
+                }
+            }
+
+            enemyDefeated(enemyIndex) {
+                const enemy = this.enemies[enemyIndex];
+                this.addMessage('Enemy defeated!', 'success', 0);
+                this.addMessage('Enemy defeated!', 'success', 1);
+                
+                // Award points to both players
+                this.players.forEach(player => player.score += 500);
+                
+                // Remove enemy elements from both screens
+                for (let screen = 1; screen <= 2; screen++) {
+                    const enemyEl = document.getElementById(`${enemy.id}_screen${screen}`);
+                    if (enemyEl) enemyEl.remove();
+                }
+                
+                // Remove enemy from array
+                this.enemies.splice(enemyIndex, 1);
+                
+                // Spawn new enemy elsewhere after delay
+                setTimeout(() => {
+                    const spawnDistance = 500 + Math.random() * 1000;
+                    const angle = Math.random() * Math.PI * 2;
+                    const centerX = (this.players[0].x + this.players[1].x) / 2;
+                    const centerY = (this.players[0].y + this.players[1].y) / 2;
+                    
+                    this.spawnEnemy(
+                        centerX + Math.cos(angle) * spawnDistance,
+                        centerY + Math.sin(angle) * spawnDistance
+                    );
+                    
+                    this.addMessage('New enemy spawned!', 'warning', 0);
+                    this.addMessage('New enemy spawned!', 'warning', 1);
+                }, 5000);
+            }
+
+            updateEffects() {
+                // Handle ongoing effects like poison, freeze, etc.
+                this.players.forEach((player, index) => {
+                    player.effects.forEach((effect, effectIndex) => {
+                        effect.duration--;
+                        
+                        if (effect.type === 'poison' && effect.duration % 60 === 0) {
+                            this.damagePlayer(index, 5);
+                        }
+                        
+                        if (effect.duration <= 0) {
+                            player.effects.splice(effectIndex, 1);
+                        }
+                    });
+                });
+            }
+
+            checkPlayerRespawn() {
+                this.players.forEach((player, index) => {
+                    if (player.health <= 0 && player.respawnTime && Date.now() > player.respawnTime) {
+                        // Respawn player
+                        player.health = player.maxHealth;
+                        player.respawnTime = null;
+                        
+                        // Respawn near the other player if alive, otherwise at a safe distance
+                        const otherPlayer = this.players[index === 0 ? 1 : 0];
+                        if (otherPlayer.health > 0) {
+                            const angle = Math.random() * Math.PI * 2;
+                            const distance = 100 + Math.random() * 200;
+                            player.x = otherPlayer.x + Math.cos(angle) * distance;
+                            player.y = otherPlayer.y + Math.sin(angle) * distance;
+                        }
+                        
+                        // Clear negative effects
+                        player.effects = [];
+                        player.defenseBuff = 0;
+                        player.invisible = 0;
+                        player.attackCooldown = 0;
+                        
+                        this.addMessage(`Respawned!`, 'success', index);
+                    }
+                });
+            }
+
+            respawnItems() {
+                this.mazeChunks.forEach((chunk, chunkKey) => {
+                    chunk.items.forEach(item => {
+                        if (item.collected && Date.now() > item.respawnTime) {
+                            item.collected = false;
+                            
+                            // Show item on both screens
+                            for (let screen = 1; screen <= 2; screen++) {
+                                const itemEl = document.getElementById(`${item.id}_screen${screen}`);
+                                if (itemEl) itemEl.style.display = 'block';
+                            }
+                        }
+                    });
+                });
+            }
+
+            isWallCollision(x, y, width, height) {
+                // Check walls in nearby chunks
+                const chunkX = Math.floor(x / this.chunkSize);
+                const chunkY = Math.floor(y / this.chunkSize);
+                
+                for (let dx = -1; dx <= 1; dx++) {
+                    for (let dy = -1; dy <= 1; dy++) {
+                        const chunkKey = `${chunkX + dx},${chunkY + dy}`;
+                        const chunk = this.mazeChunks.get(chunkKey);
+                        if (!chunk) continue;
+                        
+                        for (const wall of chunk.walls) {
+                            if (x < wall.x + wall.width &&
+                                x + width > wall.x &&
+                                y < wall.y + wall.height &&
+                                y + height > wall.y) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+                return false;
+            }
+
+            updateCameras() {
+                this.players.forEach((player, index) => {
+                    const gameArea = document.getElementById(`gameArea${index + 1}`);
+                    const screenWidth = window.innerWidth / 2;
+                    const screenHeight = window.innerHeight;
+                    
+                    // Center camera on player
+                    const targetX = -player.x + screenWidth / 2;
+                    const targetY = -player.y + screenHeight / 2;
+                    
+                    // Smooth camera movement
+                    this.cameras[index].x += (targetX - this.cameras[index].x) * 0.1;
+                    this.cameras[index].y += (targetY - this.cameras[index].y) * 0.1;
+                    
+                    gameArea.style.transform = `translate(${this.cameras[index].x}px, ${this.cameras[index].y}px)`;
+                });
+            }
+
+            updateUI() {
+                this.players.forEach((player, index) => {
+                    const healthPercent = (player.health / player.maxHealth) * 100;
+                    document.getElementById(`health${index + 1}`).style.width = healthPercent + '%';
+                    document.getElementById(`hp${index + 1}`).textContent = Math.max(0, player.health);
+                    document.getElementById(`score${index + 1}`).textContent = player.score;
+                });
+            }
+
+            updateInventoryDisplay() {
+                this.players.forEach((player, playerIndex) => {
+                    const inventoryEl = document.getElementById(`inventory${playerIndex + 1}`);
+                    inventoryEl.innerHTML = '';
+                    
+                    // Create 16 inventory slots
+                    for (let i = 0; i < 16; i++) {
+                        const slotEl = document.createElement('div');
+                        slotEl.className = 'inventory-slot';
+                        
+                        if (player.inventory[i]) {
+                            const item = player.inventory[i];
+                            const itemEl = document.createElement('div');
+                            itemEl.className = `inventory-item ${item.type}`;
+                            
+                            if (item.count > 1) {
+                                const countEl = document.createElement('div');
+                                countEl.className = 'item-count';
+                                countEl.textContent = item.count;
+                                slotEl.appendChild(countEl);
+                            }
+                            
+                            slotEl.appendChild(itemEl);
+                            
+                            if (i === player.selectedSlot) {
+                                slotEl.classList.add('selected');
+                            }
+                        }
+                        
+                        inventoryEl.appendChild(slotEl);
+                    }
+                });
+            }
+
+            updateMinimaps() {
+                this.players.forEach((player, playerIndex) => {
+                    const minimap = document.getElementById(`minimap${playerIndex + 1}`);
+                    minimap.innerHTML = '';
+                    
+                    // Scale factor for minimap
+                    const scale = 0.02;
+                    const centerX = 60; // Center of minimap
+                    const centerY = 45;
+                    
+                    // Draw both players
+                    this.players.forEach((p, pIndex) => {
+                        if (p.health <= 0) return;
+                        
+                        const relX = (p.x - player.x) * scale + centerX;
+                        const relY = (p.y - player.y) * scale + centerY;
+                        
+                        if (relX >= 0 && relX <= 120 && relY >= 0 && relY <= 90) {
+                            const playerEl = document.createElement('div');
+                            playerEl.className = `minimap-player${pIndex + 1}`;
+                            playerEl.style.left = relX + 'px';
+                            playerEl.style.top = relY + 'px';
+                            minimap.appendChild(playerEl);
+                        }
+                    });
+                    
+                    // Draw enemies
+                    this.enemies.forEach(enemy => {
+                        const relX = (enemy.x - player.x) * scale + centerX;
+                        const relY = (enemy.y - player.y) * scale + centerY;
+                        
+                        if (relX >= 0 && relX <= 120 && relY >= 0 && relY <= 90) {
+                            const enemyEl = document.createElement('div');
+                            enemyEl.className = 'minimap-enemy';
+                            enemyEl.style.left = relX + 'px';
+                            enemyEl.style.top = relY + 'px';
+                            minimap.appendChild(enemyEl);
+                        }
+                    });
+                    
+                    // Draw nearby items
+                    const chunkX = Math.floor(player.x / this.chunkSize);
+                    const chunkY = Math.floor(player.y / this.chunkSize);
+                    
+                    for (let dx = -2; dx <= 2; dx++) {
+                        for (let dy = -2; dy <= 2; dy++) {
+                            const chunkKey = `${chunkX + dx},${chunkY + dy}`;
+                            const chunk = this.mazeChunks.get(chunkKey);
+                            if (!chunk) continue;
+                            
+                            chunk.items.forEach(item => {
+                                if (item.collected) return;
+                                
+                                const relX = (item.x - player.x) * scale + centerX;
+                                const relY = (item.y - player.y) * scale + centerY;
+                                
+                                if (relX >= 0 && relX <= 120 && relY >= 0 && relY <= 90) {
+                                    const itemEl = document.createElement('div');
+                                    itemEl.className = 'minimap-item';
+                                    itemEl.style.left = relX + 'px';
+                                    itemEl.style.top = relY + 'px';
+                                    minimap.appendChild(itemEl);
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+
+            addMessage(text, type = 'info', playerIndex) {
+                if (playerIndex !== undefined) {
+                    // Add message to specific player's screen
+                    const messagesEl = document.getElementById(`messages${playerIndex + 1}`);
+                    const messageEl = document.createElement('div');
+                    messageEl.className = `message ${type}`;
+                    messageEl.textContent = text;
+                    messagesEl.appendChild(messageEl);
+                    messagesEl.scrollTop = messagesEl.scrollHeight;
+
+                    // Remove old messages
+                    if (messagesEl.children.length > 6) {
+                        messagesEl.removeChild(messagesEl.firstChild);
+                    }
+                } else {
+                    // Add message to both screens
+                    for (let i = 0; i < 2; i++) {
+                        this.addMessage(text, type, i);
+                    }
+                }
+            }
+
+            checkCollisions() {
+                // Check door unlocking and other collision-based interactions
+                this.doors.forEach((door, index) => {
+                    if (!door.locked) return;
+                    
+                    this.players.forEach((player, playerIndex) => {
+                        const hasKey = player.inventory.some(item => item.type === door.requires);
+                        if (hasKey) {
+                            door.locked = false;
+                            this.addMessage(`Door unlocked with ${door.requires}!`, 'success', playerIndex);
+                        }
+                    });
+                });
+            }
+
+            gameOver(message) {
+                this.gameRunning = false;
+                document.getElementById('gameOverTitle').textContent = 'Game Over';
+                document.getElementById('gameOverMessage').textContent = message;
+                
+                const statsHtml = `
+                    <div style="margin-top: 20px;">
+                        <h3>Final Stats:</h3>
+                        <p>Player 1: ${this.players[0].score} points, ${this.players[0].health} HP</p>
+                        <p>Player 2: ${this.players[1].score} points, ${this.players[1].health} HP</p>
+                        <p>Winner: ${this.players[0].score > this.players[1].score ? 'Player 1' : 
+                                    this.players[1].score > this.players[0].score ? 'Player 2' : 'Tie'}</p>
+                    </div>
+                `;
+                document.getElementById('finalStats').innerHTML = statsHtml;
+                document.getElementById('gameOver').style.display = 'flex';
+            }
+
+            togglePause() {
+                this.gameRunning = !this.gameRunning;
+                if (this.gameRunning) {
+                    this.gameLoop();
+                    this.addMessage('Game resumed', 'info');
+                } else {
+                    this.addMessage('Game paused', 'warning');
+                }
+            }
+        }
+
+        function restartGame() {
+            // Clear both game areas
+            document.getElementById('gameArea1').innerHTML = '';
+            document.getElementById('gameArea2').innerHTML = '';
+            
+            // Clear messages
+            document.getElementById('messages1').innerHTML = '';
+            document.getElementById('messages2').innerHTML = '';
+            
+            // Hide game over screen
+            document.getElementById('gameOver').style.display = 'none';
+            
+            // Start new game
+            new Game();
+        }
+
+        // Add explosion animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes explosion {
+                0% { transform: scale(0); opacity: 1; }
+                50% { transform: scale(1.5); opacity: 0.8; }
+                100% { transform: scale(2); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Initialize game when page loads
+        window.addEventListener('load', () => {
+            new Game();
+        });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96d928ea9501e5ba',t:'MTc1NDkzMDI3MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

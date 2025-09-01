@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Block Search</title>
+    <style>
+        body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 20px;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+input[type="text"] {
+    width: 70%;
+    padding: 10px;
+    margin-right: 10px;
+}
+
+button {
+    padding: 10px 15px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #218838;
+}
+
+#image-container {
+    margin-top: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.color-block {
+    width: 100px;
+    height: 100px;
+    margin: 5px;
+    border: 1px solid #ccc;
+}
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Color Block Image Search</h1>
+        <input type="text" id="search-input" placeholder="Search for a color block...">
+        <button id="search-button">Search</button>
+        <div id="image-container"></div>
+    </div>
+    <script>document.getElementById('search-button').addEventListener('click', function() {
+        const input = document.getElementById('search-input').value;
+        const imageContainer = document.getElementById('image-container');
+    
+        imageContainer.innerHTML = ''; // Clear previous images
+    
+        // Fetching images from an example color block API or using a predefined set
+        fetch(`https://api.color.com/search?query=${input}`)
+            .then(response => response.json())
+            .then(data => {
+                data.results.forEach(item => {
+                    const div = document.createElement('div');
+                    div.classList.add('color-block');
+                    div.style.backgroundColor = item.color; // Assuming the API returns color codes
+                    imageContainer.appendChild(div);
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching data:', error);
+                imageContainer.innerHTML = '<p>No images found.</p>';
+            });
+    });
+    </script>
+</body>
+</html>

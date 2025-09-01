@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AI World War</title>
+<style>
+    html, body {
+        margin: 0;
+        padding: 0;
+        background: #111;
+        color: white;
+        font-family: Arial, sans-serif;
+        overflow: hidden;
+        height: 100%;
+    }
+    canvas {
+        display: block;
+        background: #222;
+    }
+    #ui {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        padding: 10px;
+        background: rgba(0,0,0,0.5);
+        border-radius: 8px;
+        font-size: 14px;
+        max-width: 300px;
+    }
+    #title {
+        font-size: 18px;
+        margin-bottom: 5px;
+        font-weight: bold;
+    }
+    .faction {
+        margin-bottom: 5px;
+    }
+    .bar {
+        height: 10px;
+        background: #333;
+        border-radius: 5px;
+        overflow: hidden;
+        margin-top: 2px;
+    }
+    .fill {
+        height: 10px;
+    }
+</style>
+</head>
+<body>
+<div id="ui">
+    <div id="title">AI World War</div>
+    <div id="factions"></div>
+</div>
+<canvas id="game"></canvas>
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+class Tile {
+    constructor(x, y, size) {
+        this.x = x;
+        this.y = y;
+        this.size = size;
+        this.owner = null;
+        this.strength = 0;
+    }
+    draw() {
+        if (this.owner) {
+            ctx.fillStyle = this.owner.color;
+            ctx.fillRect(this.x, this.y, this.size, this.size);
+        } else {
+            ctx.fillStyle = '#111';
+            ctx.fillRect(this.x, this.y, this.size, this.size);
+        }
+    }
+}
+
+class Faction {
+    constructor(name, color) {
+        this.name = name;
+        this.color = color;
+        this.tiles = [];
+        this.aggressiveness = Math.random() * 0.5 + 0.5;
+    }
+    update() {
+        let possibleAttacks = [];
+        for (let tile of this.tiles) {
+            let neighbors = getNeighbors(tile);
+            for (let n of neighbors) {
+                if (n.owner !== this) {
+                    possibleAttacks.push({ from: tile, to: n });
+                }
+            }
+        }
+        if (possibleAttacks.length > 0) {
+            for (let i = 0; i < possibleAttacks.length * this.aggressiveness; i++) {
+                let attack = possibleAttacks[Math.floor(Math.random() * possibleAttacks.length)];
+                if (!attack.to.owner || Math.random() < 0.6) {
+                    attack.to.owner = this;
+                    this.tiles.push(attack.to);
+                }
+            }
+        }
+    }
+}
+
+const gridSize = 20;
+const cols = Math.floor(canvas.width / gridSize);
+const rows = Math.floor(canvas.height / gridSize);
+let tiles = [];
+let factions = [];
+
+function createWorld() {
+    for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+            tiles.push(new Tile(x * gridSize, y * gridSize, gridSize));
+        }
+    }
+}
+
+function getTileAt(x, y) {
+    return tiles[y * cols + x];
+}
+
+function getNeighbors(tile) {
+    let x = tile.x / gridSize;
+    let y = tile.y / gridSize;
+    let neighbors = [];
+    let dirs = [
+        [0, -1], [0, 1], [-1, 0], [1, 0]
+    ];
+    for (let [dx, dy] of dirs) {
+        let nx = x + dx;
+        let ny = y + dy;
+        if (nx >= 0 && nx < cols && ny >= 0 && ny < rows) {
+            neighbors.push(getTileAt(nx, ny));
+        }
+    }
+    return neighbors;
+}
+
+function spawnFactions(num) {
+    for (let i = 0; i < num; i++) {
+        let color = `hsl(${Math.random() * 360}, 80%, 50%)`;
+        let faction = new Faction("AI " + (i+1), color);
+        factions.push(faction);
+        let startX = Math.floor(Math.random() * cols);
+        let startY = Math.floor(Math.random() * rows);
+        let startTile = getTileAt(startX, startY);
+        startTile.owner = faction;
+        faction.tiles.push(startTile);
+    }
+}
+
+function drawWorld() {
+    for (let tile of tiles) {
+        tile.draw();
+    }
+}
+
+function updateUI() {
+    const factionsDiv = document.getElementById('factions');
+    factionsDiv.innerHTML = '';
+    for (let f of factions) {
+        let div = document.createElement('div');
+        div.classList.add('faction');
+        let count = f.tiles.length;
+        div.innerHTML = `
+            <div style="color:${f.color}">${f.name}: ${count} tiles</div>
+            <div class="bar"><div class="fill" style="width:${(count/tiles.length)*100}%; background:${f.color}"></div></div>
+        `;
+        factionsDiv.appendChild(div);
+    }
+}
+
+function updateGame() {
+    for (let f of factions) {
+        f.update();
+    }
+}
+
+function gameLoop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    updateGame();
+    drawWorld();
+    updateUI();
+    requestAnimationFrame(gameLoop);
+}
+
+createWorld();
+spawnFactions(6);
+gameLoop();
+</script>
+</body>
+</html>

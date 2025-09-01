@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Race 3D - 2 Player Family Game</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Orbitron', monospace;
+            background: linear-gradient(135deg, #0c0c2e 0%, #1a1a4a 50%, #2d1b69 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        /* Animated stars background */
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 2s infinite alternate;
+        }
+        
+        @keyframes twinkle {
+            0% { opacity: 0.3; transform: scale(1); }
+            100% { opacity: 1; transform: scale(1.2); }
+        }
+        
+        .game-container {
+            position: relative;
+            z-index: 10;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .game-header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+        
+        .game-title {
+            font-size: 3rem;
+            font-weight: 900;
+            background: linear-gradient(45deg, #00ffff, #ff00ff, #ffff00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+        }
+        
+        .game-subtitle {
+            font-size: 1.2rem;
+            color: #b0b0ff;
+            margin-bottom: 20px;
+        }
+        
+        .score-board {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            gap: 20px;
+        }
+        
+        .player-score {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            color: white;
+            flex: 1;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+        
+        .player-score.active {
+            border-color: #00ffff;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+        
+        .player-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .player1 .player-name {
+            color: #ff6b6b;
+        }
+        
+        .player2 .player-name {
+            color: #4ecdc4;
+        }
+        
+        .score {
+            font-size: 2rem;
+            font-weight: 900;
+        }
+        
+        .game-board {
+            perspective: 1000px;
+            margin-bottom: 30px;
+        }
+        
+        .board-3d {
+            width: 100%;
+            height: 500px;
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.3), rgba(255, 255, 255, 0.1));
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            position: relative;
+            transform-style: preserve-3d;
+            overflow: hidden;
+            backdrop-filter: blur(5px);
+        }
+        
+        .game-path {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(6, 1fr);
+            gap: 5px;
+            padding: 20px;
+        }
+        
+        .path-cell {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .path-cell:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateZ(10px);
+        }
+        
+        .path-cell.obstacle {
+            background: linear-gradient(45deg, #ff4757, #ff3742);
+            color: white;
+            animation: pulse 2s infinite;
+        }
+        
+        .path-cell.bonus {
+            background: linear-gradient(45deg, #ffa502, #ff6348);
+            color: white;
+            animation: glow 2s infinite alternate;
+        }
+        
+        .path-cell.goal {
+            background: linear-gradient(45deg, #2ed573, #1e90ff);
+            color: white;
+            animation: rainbow 3s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        @keyframes glow {
+            0% { box-shadow: 0 0 10px rgba(255, 165, 2, 0.5); }
+            100% { box-shadow: 0 0 20px rgba(255, 165, 2, 0.8); }
+        }
+        
+        @keyframes rainbow {
+            0% { filter: hue-rotate(0deg); }
+            100% { filter: hue-rotate(360deg); }
+        }
+        
+        .player-piece {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            transition: all 0.5s ease;
+            z-index: 5;
+            animation: float 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(0px) translateZ(0px); }
+            100% { transform: translateY(-5px) translateZ(10px); }
+        }
+        
+        .player1-piece {
+            background: linear-gradient(45deg, #ff6b6b, #ff5252);
+            color: white;
+            box-shadow: 0 0 15px rgba(255, 107, 107, 0.6);
+        }
+        
+        .player2-piece {
+            background: linear-gradient(45deg, #4ecdc4, #26a69a);
+            color: white;
+            box-shadow: 0 0 15px rgba(78, 205, 196, 0.6);
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .control-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Orbitron', monospace;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .control-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .control-btn:active {
+            transform: translateY(0);
+        }
+        
+        .control-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .game-info {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            color: white;
+            backdrop-filter: blur(10px);
+            margin-bottom: 20px;
+        }
+        
+        .current-player {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .game-instructions {
+            font-size: 1rem;
+            color: #b0b0ff;
+            line-height: 1.5;
+        }
+        
+        .winner-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .winner-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            color: white;
+            max-width: 400px;
+            animation: celebration 1s ease-out;
+        }
+        
+        @keyframes celebration {
+            0% { transform: scale(0.5) rotate(-180deg); opacity: 0; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        
+        .winner-title {
+            font-size: 2.5rem;
+            font-weight: 900;
+            margin-bottom: 20px;
+            animation: bounce 2s infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+        
+        @media (max-width: 768px) {
+            .game-title {
+                font-size: 2rem;
+            }
+            
+            .score-board {
+                flex-direction: column;
+            }
+            
+            .board-3d {
+                height: 400px;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .control-btn {
+                width: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="stars"></div>
+    
+    <div class="game-container">
+        <div class="game-header">
+            <h1 class="game-title">🚀 SPACE RACE 3D 🚀</h1>
+            <p class="game-subtitle">Two-Player Family Adventure Game</p>
+        </div>
+        
+        <div class="score-board">
+            <div class="player-score player1" id="player1Score">
+                <div class="player-name">Player 1 🔴</div>
+                <div class="score">0</div>
+            </div>
+            <div class="player-score player2" id="player2Score">
+                <div class="player-name">Player 2 🔵</div>
+                <div class="score">0</div>
+            </div>
+        </div>
+        
+        <div class="game-info">
+            <div class="current-player" id="currentPlayer">Player 1's Turn</div>
+            <div class="game-instructions">
+                Navigate through space! Avoid ⚠️ obstacles, collect ⭐ bonuses, and reach the 🎯 goal!
+            </div>
+        </div>
+        
+        <div class="game-board">
+            <div class="board-3d">
+                <div class="game-path" id="gamePath"></div>
+                <div class="player-piece player1-piece" id="player1Piece">1</div>
+                <div class="player-piece player2-piece" id="player2Piece">2</div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button class="control-btn" onclick="movePlayer('up')">⬆️ UP</button>
+            <button class="control-btn" onclick="movePlayer('down')">⬇️ DOWN</button>
+            <button class="control-btn" onclick="movePlayer('left')">⬅️ LEFT</button>
+            <button class="control-btn" onclick="movePlayer('right')">➡️ RIGHT</button>
+            <button class="control-btn" onclick="resetGame()">🔄 NEW GAME</button>
+        </div>
+    </div>
+    
+    <div class="winner-modal" id="winnerModal">
+        <div class="winner-content">
+            <div class="winner-title" id="winnerText">🎉 WINNER! 🎉</div>
+            <button class="control-btn" onclick="resetGame()">Play Again</button>
+        </div>
+    </div>
+    
+    <script>
+        // Game state
+        let currentPlayer = 1;
+        let player1Position = { x: 0, y: 0 };
+        let player2Position = { x: 0, y: 1 };
+        let player1Score = 0;
+        let player2Score = 0;
+        let gameBoard = [];
+        let gameActive = true;
+        
+        // Initialize the game
+        function initGame() {
+            createStars();
+            generateBoard();
+            updatePlayerPositions();
+            updateScores();
+            updateCurrentPlayer();
+        }
+        
+        // Create animated stars background
+        function createStars() {
+            const starsContainer = document.querySelector('.stars');
+            starsContainer.innerHTML = '';
+            
+            for (let i = 0; i < 100; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.width = Math.random() * 3 + 1 + 'px';
+                star.style.height = star.style.width;
+                star.style.animationDelay = Math.random() * 2 + 's';
+                starsContainer.appendChild(star);
+            }
+        }
+        
+        // Generate game board with obstacles, bonuses, and goals
+        function generateBoard() {
+            const pathContainer = document.getElementById('gamePath');
+            pathContainer.innerHTML = '';
+            gameBoard = [];
+            
+            // Create 8x6 grid
+            for (let row = 0; row < 6; row++) {
+                gameBoard[row] = [];
+                for (let col = 0; col < 8; col++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'path-cell';
+                    cell.dataset.row = row;
+                    cell.dataset.col = col;
+                    
+                    let cellType = 'empty';
+                    let cellContent = '';
+                    
+                    // Starting positions (safe)
+                    if ((row === 0 && col === 0) || (row === 1 && col === 0)) {
+                        cellType = 'start';
+                        cellContent = '🚀';
+                    }
+                    // Goal positions (right side)
+                    else if (col === 7) {
+                        cellType = 'goal';
+                        cellContent = '🎯';
+                        cell.classList.add('goal');
+                    }
+                    // Random obstacles and bonuses
+                    else {
+                        const random = Math.random();
+                        if (random < 0.2) {
+                            cellType = 'obstacle';
+                            cellContent = '⚠️';
+                            cell.classList.add('obstacle');
+                        } else if (random < 0.35) {
+                            cellType = 'bonus';
+                            cellContent = '⭐';
+                            cell.classList.add('bonus');
+                        } else {
+                            cellContent = '🌌';
+                        }
+                    }
+                    
+                    cell.innerHTML = cellContent;
+                    gameBoard[row][col] = cellType;
+                    pathContainer.appendChild(cell);
+                }
+            }
+        }
+        
+        // Update player piece positions on the board
+        function updatePlayerPositions() {
+            const player1Piece = document.getElementById('player1Piece');
+            const player2Piece = document.getElementById('player2Piece');
+            const pathContainer = document.getElementById('gamePath');
+            const containerRect = pathContainer.getBoundingClientRect();
+            
+            // Calculate cell dimensions
+            const cellWidth = containerRect.width / 8;
+            const cellHeight = containerRect.height / 6;
+            
+            // Position player 1
+            player1Piece.style.left = (player1Position.x * cellWidth + cellWidth/2 - 15) + 'px';
+            player1Piece.style.top = (player1Position.y * cellHeight + cellHeight/2 - 15) + 'px';
+            
+            // Position player 2
+            player2Piece.style.left = (player2Position.x * cellWidth + cellWidth/2 - 15) + 'px';
+            player2Piece.style.top = (player2Position.y * cellHeight + cellHeight/2 - 15) + 'px';
+        }
+        
+        // Move player function
+        function movePlayer(direction) {
+            if (!gameActive) return;
+            
+            let currentPos = currentPlayer === 1 ? player1Position : player2Position;
+            let newPos = { ...currentPos };
+            
+            // Calculate new position
+            switch (direction) {
+                case 'up':
+                    if (newPos.y > 0) newPos.y--;
+                    break;
+                case 'down':
+                    if (newPos.y < 5) newPos.y++;
+                    break;
+                case 'left':
+                    if (newPos.x > 0) newPos.x--;
+                    break;
+                case 'right':
+                    if (newPos.x < 7) newPos.x++;
+                    break;
+            }
+            
+            // Check if move is valid (not occupied by other player)
+            const otherPos = currentPlayer === 1 ? player2Position : player1Position;
+            if (newPos.x === otherPos.x && newPos.y === otherPos.y) {
+                return; // Can't move to occupied space
+            }
+            
+            // Update position
+            if (currentPlayer === 1) {
+                player1Position = newPos;
+            } else {
+                player2Position = newPos;
+            }
+            
+            // Check cell type and handle effects
+            const cellType = gameBoard[newPos.y][newPos.x];
+            handleCellEffect(cellType, currentPlayer);
+            
+            updatePlayerPositions();
+            
+            // Check for win condition
+            if (cellType === 'goal') {
+                endGame(currentPlayer);
+                return;
+            }
+            
+            // Switch players
+            currentPlayer = currentPlayer === 1 ? 2 : 1;
+            updateCurrentPlayer();
+        }
+        
+        // Handle cell effects
+        function handleCellEffect(cellType, player) {
+            switch (cellType) {
+                case 'obstacle':
+                    // Lose points for hitting obstacle
+                    if (player === 1) {
+                        player1Score = Math.max(0, player1Score - 10);
+                    } else {
+                        player2Score = Math.max(0, player2Score - 10);
+                    }
+                    break;
+                case 'bonus':
+                    // Gain points for collecting bonus
+                    if (player === 1) {
+                        player1Score += 20;
+                    } else {
+                        player2Score += 20;
+                    }
+                    break;
+                case 'goal':
+                    // Big bonus for reaching goal
+                    if (player === 1) {
+                        player1Score += 100;
+                    } else {
+                        player2Score += 100;
+                    }
+                    break;
+            }
+            updateScores();
+        }
+        
+        // Update score display
+        function updateScores() {
+            document.querySelector('#player1Score .score').textContent = player1Score;
+            document.querySelector('#player2Score .score').textContent = player2Score;
+        }
+        
+        // Update current player display
+        function updateCurrentPlayer() {
+            const currentPlayerElement = document.getElementById('currentPlayer');
+            const player1ScoreElement = document.getElementById('player1Score');
+            const player2ScoreElement = document.getElementById('player2Score');
+            
+            if (currentPlayer === 1) {
+                currentPlayerElement.textContent = "Player 1's Turn 🔴";
+                player1ScoreElement.classList.add('active');
+                player2ScoreElement.classList.remove('active');
+            } else {
+                currentPlayerElement.textContent = "Player 2's Turn 🔵";
+                player2ScoreElement.classList.add('active');
+                player1ScoreElement.classList.remove('active');
+            }
+        }
+        
+        // End game and show winner
+        function endGame(winner) {
+            gameActive = false;
+            const winnerModal = document.getElementById('winnerModal');
+            const winnerText = document.getElementById('winnerText');
+            
+            if (winner === 1) {
+                winnerText.innerHTML = '🎉 PLAYER 1 WINS! 🎉<br>🔴 Red Rocket Champion! 🔴';
+            } else {
+                winnerText.innerHTML = '🎉 PLAYER 2 WINS! 🎉<br>🔵 Blue Rocket Champion! 🔵';
+            }
+            
+            winnerModal.style.display = 'flex';
+        }
+        
+        // Reset game
+        function resetGame() {
+            // Hide winner modal
+            document.getElementById('winnerModal').style.display = 'none';
+            
+            // Reset game state
+            currentPlayer = 1;
+            player1Position = { x: 0, y: 0 };
+            player2Position = { x: 0, y: 1 };
+            player1Score = 0;
+            player2Score = 0;
+            gameActive = true;
+            
+            // Regenerate board and update display
+            generateBoard();
+            updatePlayerPositions();
+            updateScores();
+            updateCurrentPlayer();
+        }
+        
+        // Handle window resize
+        window.addEventListener('resize', updatePlayerPositions);
+        
+        // Initialize game when page loads
+        initGame();
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96e936b4d579de83',t:'MTc1NTA5ODYwNi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

@@ -1,0 +1,1487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Epic 2-Player Minecraft Survival Adventure</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(to bottom, #87CEEB 0%, #98D8E8 50%, #B0E0E6 100%);
+            overflow: hidden;
+            height: 100vh;
+            user-select: none;
+        }
+
+        .game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .main-hud {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, rgba(0,0,0,0.9) 0%, rgba(20,20,20,0.9) 100%);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            font-size: 14px;
+            border-bottom: 3px solid #444;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+
+        .player-section {
+            display: flex;
+            align-items: center;
+            gap: 25px;
+            background: rgba(255,255,255,0.1);
+            padding: 10px 15px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+        }
+
+        .player-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            border: 3px solid white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            font-size: 14px;
+        }
+
+        .player1-avatar {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            box-shadow: 0 0 15px rgba(231, 76, 60, 0.6);
+        }
+
+        .player2-avatar {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            box-shadow: 0 0 15px rgba(52, 152, 219, 0.6);
+        }
+
+        .player-details {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .player-name {
+            font-weight: bold;
+            font-size: 16px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+
+        .health-display {
+            display: flex;
+            gap: 3px;
+            align-items: center;
+        }
+
+        .heart-icon {
+            width: 18px;
+            height: 18px;
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            border-radius: 3px;
+            position: relative;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .heart-icon.empty {
+            background: linear-gradient(135deg, #34495e, #2c3e50);
+        }
+
+        .heart-icon::before {
+            content: '♥';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 12px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+
+        .controls-hint {
+            font-size: 12px;
+            color: #bdc3c7;
+            margin-top: 2px;
+        }
+
+        .center-hud {
+            text-align: center;
+            background: rgba(255,255,255,0.1);
+            padding: 15px 25px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .time-display {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .day-info {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+
+        .game-stats {
+            font-size: 14px;
+            color: #ecf0f1;
+        }
+
+        .world-container {
+            position: absolute;
+            top: 80px;
+            left: 0;
+            width: 100%;
+            height: calc(100vh - 80px);
+            transition: filter 0.8s ease, background 0.8s ease;
+            background: linear-gradient(to bottom, #87CEEB 0%, #98D8E8 100%);
+        }
+
+        .world-container.night-mode {
+            filter: brightness(0.4) hue-rotate(220deg) saturate(1.2);
+            background: linear-gradient(to bottom, #1a1a2e 0%, #16213e 100%);
+        }
+
+        .terrain-chunk {
+            position: absolute;
+            display: grid;
+            grid-template-columns: repeat(20, 30px);
+            grid-template-rows: repeat(25, 30px);
+            gap: 1px;
+        }
+
+        .terrain-block {
+            width: 30px;
+            height: 30px;
+            position: relative;
+            border: 1px solid rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .terrain-block:hover {
+            transform: scale(1.05);
+            z-index: 10;
+            box-shadow: 0 0 10px rgba(255,255,255,0.5);
+        }
+
+        .block-air { background: transparent; }
+        .block-grass { 
+            background: linear-gradient(135deg, #7CB342, #689F38);
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.3);
+        }
+        .block-dirt { 
+            background: linear-gradient(135deg, #8D6E63, #6D4C41);
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.2);
+        }
+        .block-stone { 
+            background: linear-gradient(135deg, #757575, #616161);
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.2);
+        }
+        .block-wood { 
+            background: linear-gradient(135deg, #6D4C41, #5D4037);
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.3);
+        }
+        .block-leaves { 
+            background: linear-gradient(135deg, #4CAF50, #388E3C);
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.3);
+        }
+        .block-water { 
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            animation: waterFlow 2s ease-in-out infinite;
+        }
+        .block-sand { 
+            background: linear-gradient(135deg, #FFC107, #FF8F00);
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.4);
+        }
+        .block-coal { 
+            background: linear-gradient(135deg, #212121, #000000);
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.1);
+        }
+        .block-iron { 
+            background: linear-gradient(135deg, #90A4AE, #607D8B);
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.4);
+        }
+
+        @keyframes waterFlow {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
+        }
+
+        .game-character {
+            position: absolute;
+            width: 35px;
+            height: 35px;
+            border-radius: 8px;
+            border: 3px solid white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.9);
+            z-index: 500;
+            transition: all 0.15s ease;
+            font-size: 14px;
+        }
+
+        .character-player1 {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            box-shadow: 0 0 20px rgba(231, 76, 60, 0.7);
+        }
+
+        .character-player2 {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            box-shadow: 0 0 20px rgba(52, 152, 219, 0.7);
+        }
+
+        .game-character.moving {
+            transform: scale(1.1);
+        }
+
+        .game-character.damaged {
+            animation: damageFlash 0.5s ease;
+        }
+
+        @keyframes damageFlash {
+            0%, 100% { opacity: 1; }
+            25%, 75% { opacity: 0.3; }
+            50% { opacity: 0.6; }
+        }
+
+        .hostile-creature {
+            position: absolute;
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            border: 2px solid #e74c3c;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #e74c3c;
+            font-weight: bold;
+            z-index: 400;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 15px rgba(231, 76, 60, 0.5);
+        }
+
+        .hostile-creature.attacking {
+            transform: scale(1.3) translateY(-15px);
+            box-shadow: 0 0 25px rgba(231, 76, 60, 0.8);
+        }
+
+        .hostile-creature.moving {
+            animation: creatureWalk 0.5s ease-in-out infinite;
+        }
+
+        @keyframes creatureWalk {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+        }
+
+        .floating-damage {
+            position: absolute;
+            color: #e74c3c;
+            font-weight: bold;
+            font-size: 20px;
+            pointer-events: none;
+            z-index: 600;
+            animation: floatDamage 1.5s ease-out forwards;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+
+        @keyframes floatDamage {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-40px) scale(1.2);
+            }
+        }
+
+        .building-indicator {
+            position: absolute;
+            background: rgba(255,255,255,0.8);
+            color: #2c3e50;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            pointer-events: none;
+            z-index: 700;
+            animation: buildingPulse 0.5s ease;
+        }
+
+        @keyframes buildingPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .game-over-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(0,0,0,0.9), rgba(20,20,20,0.9));
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            backdrop-filter: blur(10px);
+        }
+
+        .game-over-panel {
+            background: linear-gradient(135deg, #ecf0f1, #bdc3c7);
+            padding: 50px;
+            border-radius: 25px;
+            text-align: center;
+            max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            border: 3px solid #34495e;
+        }
+
+        .game-over-title {
+            color: #e74c3c;
+            margin-bottom: 25px;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .game-over-message {
+            color: #2c3e50;
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+
+        .restart-button {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            color: white;
+            border: none;
+            padding: 18px 35px;
+            border-radius: 15px;
+            font-size: 1.3rem;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            font-weight: bold;
+        }
+
+        .restart-button:hover {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+        }
+
+        .controls-panel {
+            position: fixed;
+            bottom: 15px;
+            left: 15px;
+            background: linear-gradient(135deg, rgba(0,0,0,0.9), rgba(20,20,20,0.9));
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            font-size: 13px;
+            z-index: 1000;
+            max-width: 350px;
+            backdrop-filter: blur(10px);
+            border: 2px solid #444;
+        }
+
+        .controls-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #3498db;
+            text-align: center;
+        }
+
+        .control-group {
+            margin-bottom: 12px;
+            padding: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+        }
+
+        .control-label {
+            font-weight: bold;
+            color: #ecf0f1;
+        }
+
+        .control-keys {
+            color: #bdc3c7;
+            margin-left: 10px;
+        }
+
+        .inventory-display {
+            position: fixed;
+            bottom: 15px;
+            right: 15px;
+            background: linear-gradient(135deg, rgba(0,0,0,0.9), rgba(20,20,20,0.9));
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            font-size: 13px;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            border: 2px solid #444;
+        }
+
+        .inventory-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #e67e22;
+            text-align: center;
+        }
+
+        .inventory-section {
+            margin-bottom: 15px;
+        }
+
+        .inventory-player {
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .inventory-player.player1 { color: #e74c3c; }
+        .inventory-player.player2 { color: #3498db; }
+
+        .block-selector {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .block-option {
+            width: 25px;
+            height: 25px;
+            border: 2px solid #555;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .block-option.selected {
+            border-color: #f39c12;
+            box-shadow: 0 0 10px rgba(243, 156, 18, 0.6);
+            transform: scale(1.1);
+        }
+
+        .weather-effects {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 300;
+        }
+
+        .rain-drop {
+            position: absolute;
+            width: 2px;
+            height: 20px;
+            background: linear-gradient(to bottom, transparent, #3498db);
+            animation: rainfall 1s linear infinite;
+        }
+
+        @keyframes rainfall {
+            0% { transform: translateY(-20px); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(100vh); opacity: 0; }
+        }
+
+        .particle-effect {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #f39c12;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 350;
+            animation: particleFloat 2s ease-out forwards;
+        }
+
+        @keyframes particleFloat {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-30px) scale(0.5);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .terrain-block {
+                width: 25px;
+                height: 25px;
+            }
+            
+            .terrain-chunk {
+                grid-template-columns: repeat(20, 25px);
+                grid-template-rows: repeat(25, 25px);
+            }
+            
+            .game-character {
+                width: 28px;
+                height: 28px;
+                font-size: 12px;
+            }
+            
+            .hostile-creature {
+                width: 22px;
+                height: 22px;
+                font-size: 10px;
+            }
+            
+            .controls-panel, .inventory-display {
+                font-size: 11px;
+                padding: 15px;
+                max-width: 280px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <!-- Main HUD -->
+        <div class="main-hud">
+            <div class="player-section">
+                <div class="player-avatar player1-avatar">P1</div>
+                <div class="player-details">
+                    <div class="player-name" style="color: #e74c3c;">Red Warrior</div>
+                    <div class="health-display" id="player1-health"></div>
+                    <div class="controls-hint">WASD Movement</div>
+                </div>
+            </div>
+            
+            <div class="center-hud">
+                <div class="time-display" id="time-icon">☀️</div>
+                <div class="day-info" id="day-counter">Day 1</div>
+                <div class="game-stats">
+                    <div id="time-display">06:00 AM</div>
+                    <div id="enemy-counter">Enemies: 0</div>
+                    <div id="weather-status">Clear Skies</div>
+                </div>
+            </div>
+            
+            <div class="player-section">
+                <div class="player-details">
+                    <div class="player-name" style="color: #3498db;">Blue Guardian</div>
+                    <div class="health-display" id="player2-health"></div>
+                    <div class="controls-hint">Arrow Keys</div>
+                </div>
+                <div class="player-avatar player2-avatar">P2</div>
+            </div>
+        </div>
+
+        <!-- Game World -->
+        <div class="world-container" id="game-world">
+            <div class="weather-effects" id="weather-layer"></div>
+            <div class="game-character character-player1" id="player1">P1</div>
+            <div class="game-character character-player2" id="player2">P2</div>
+        </div>
+
+        <!-- Controls Panel -->
+        <div class="controls-panel">
+            <div class="controls-title">🎮 Game Controls</div>
+            <div class="control-group">
+                <span class="control-label">Movement:</span>
+                <span class="control-keys">WASD / Arrow Keys</span>
+            </div>
+            <div class="control-group">
+                <span class="control-label">Build Block:</span>
+                <span class="control-keys">Left Click</span>
+            </div>
+            <div class="control-group">
+                <span class="control-label">Break Block:</span>
+                <span class="control-keys">Right Click</span>
+            </div>
+            <div class="control-group">
+                <span class="control-label">Survival:</span>
+                <span class="control-keys">3 Lives Each</span>
+            </div>
+            <div class="control-group">
+                <span class="control-label">Night Mode:</span>
+                <span class="control-keys">Enemies Attack!</span>
+            </div>
+        </div>
+
+        <!-- Inventory Display -->
+        <div class="inventory-display">
+            <div class="inventory-title">🔨 Block Selection</div>
+            <div class="inventory-section">
+                <div class="inventory-player player1">Player 1 (Red):</div>
+                <div>Q=Grass, W=Dirt, E=Stone, R=Wood</div>
+                <div>T=Coal, Y=Iron, U=Sand, I=Water</div>
+            </div>
+            <div class="inventory-section">
+                <div class="inventory-player player2">Player 2 (Blue):</div>
+                <div>1=Grass, 2=Dirt, 3=Stone, 4=Wood</div>
+                <div>5=Coal, 6=Iron, 7=Sand, 8=Water</div>
+            </div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div class="game-over-screen" id="game-over-screen">
+            <div class="game-over-panel">
+                <h2 class="game-over-title">🎮 Game Over!</h2>
+                <p class="game-over-message" id="game-over-text"></p>
+                <button class="restart-button" onclick="restartEntireGame()">🔄 Play Again</button>
+                <button class="restart-button" onclick="togglePause()" style="background: linear-gradient(135deg, #f39c12, #e67e22);">⏸️ Pause</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== GAME STATE MANAGEMENT =====
+        class GameState {
+            constructor() {
+                this.gameTime = 360; // Start at 6 AM (360 minutes)
+                this.gameDay = 1;
+                this.isNightTime = false;
+                this.isPaused = false;
+                this.gameRunning = true;
+                this.worldOffset = { x: 0, y: 0 };
+                this.terrainChunks = new Map();
+                this.hostileCreatures = [];
+                this.weatherSystem = { type: 'clear', intensity: 0 };
+                this.particleEffects = [];
+                
+                this.players = {
+                    1: { 
+                        x: 600, y: 300, 
+                        health: 3, maxHealth: 3, 
+                        lastDamageTime: 0,
+                        selectedBlock: 'grass',
+                        score: 0,
+                        blocksPlaced: 0,
+                        blocksDestroyed: 0
+                    },
+                    2: { 
+                        x: 650, y: 300, 
+                        health: 3, maxHealth: 3, 
+                        lastDamageTime: 0,
+                        selectedBlock: 'stone',
+                        score: 0,
+                        blocksPlaced: 0,
+                        blocksDestroyed: 0
+                    }
+                };
+                
+                this.inputKeys = {};
+                this.blockTypes = [
+                    'air', 'grass', 'dirt', 'stone', 'wood', 
+                    'leaves', 'water', 'sand', 'coal', 'iron'
+                ];
+                
+                this.blockSelections = {
+                    1: { 'q': 'grass', 'w': 'dirt', 'e': 'stone', 'r': 'wood', 't': 'coal', 'y': 'iron', 'u': 'sand', 'i': 'water' },
+                    2: { '1': 'grass', '2': 'dirt', '3': 'stone', '4': 'wood', '5': 'coal', '6': 'iron', '7': 'sand', '8': 'water' }
+                };
+            }
+        }
+
+        // ===== TERRAIN GENERATION SYSTEM =====
+        class TerrainGenerator {
+            static generateTerrainChunk(chunkX, chunkY) {
+                const chunkData = [];
+                const chunkSize = { width: 20, height: 25 };
+                
+                for (let y = 0; y < chunkSize.height; y++) {
+                    chunkData[y] = [];
+                    for (let x = 0; x < chunkSize.width; x++) {
+                        const worldX = chunkX * chunkSize.width + x;
+                        const worldY = chunkY * chunkSize.height + y;
+                        
+                        // Advanced terrain generation with multiple noise layers
+                        const surfaceHeight = 12 + 
+                            Math.floor(Math.sin(worldX * 0.03) * 4) + 
+                            Math.floor(Math.sin(worldX * 0.07) * 2) +
+                            Math.floor(Math.cos(worldX * 0.05) * 3);
+                        
+                        let blockType = 'air';
+                        
+                        if (worldY < surfaceHeight - 8) {
+                            blockType = 'air';
+                        } else if (worldY === surfaceHeight) {
+                            blockType = 'grass';
+                        } else if (worldY < surfaceHeight + 4) {
+                            blockType = Math.random() > 0.8 ? 'dirt' : 'dirt';
+                        } else if (worldY < surfaceHeight + 8) {
+                            const rand = Math.random();
+                            if (rand > 0.9) blockType = 'coal';
+                            else if (rand > 0.85) blockType = 'iron';
+                            else blockType = 'stone';
+                        } else {
+                            blockType = 'stone';
+                        }
+                        
+                        // Generate trees
+                        if (blockType === 'grass' && Math.random() > 0.92) {
+                            blockType = 'wood';
+                            // Add leaves above
+                            if (y > 0) {
+                                chunkData[y-1] = chunkData[y-1] || [];
+                                chunkData[y-1][x] = 'leaves';
+                            }
+                            if (y > 1) {
+                                chunkData[y-2] = chunkData[y-2] || [];
+                                chunkData[y-2][x] = 'leaves';
+                            }
+                        }
+                        
+                        // Generate water bodies
+                        if (worldY === surfaceHeight && Math.random() > 0.95) {
+                            blockType = 'water';
+                        }
+                        
+                        // Generate sand near water
+                        if (blockType === 'grass' && Math.random() > 0.88) {
+                            // Check for nearby water (simplified)
+                            if (Math.random() > 0.7) {
+                                blockType = 'sand';
+                            }
+                        }
+                        
+                        chunkData[y][x] = blockType;
+                    }
+                }
+                
+                return chunkData;
+            }
+            
+            static getVisibleChunks(worldOffset) {
+                const visibleChunks = [];
+                const centerChunkX = Math.floor(-worldOffset.x / (20 * 30));
+                const centerChunkY = Math.floor(-worldOffset.y / (25 * 30));
+                
+                for (let x = centerChunkX - 3; x <= centerChunkX + 3; x++) {
+                    for (let y = centerChunkY - 2; y <= centerChunkY + 2; y++) {
+                        visibleChunks.push({chunkX: x, chunkY: y});
+                    }
+                }
+                
+                return visibleChunks;
+            }
+        }
+
+        // ===== RENDERING SYSTEM =====
+        class RenderingEngine {
+            static renderGameWorld(gameState) {
+                const worldContainer = document.getElementById('game-world');
+                
+                // Clear existing terrain (keep players and creatures)
+                const existingChunks = worldContainer.querySelectorAll('.terrain-chunk');
+                existingChunks.forEach(chunk => chunk.remove());
+                
+                // Render visible terrain chunks
+                const visibleChunks = TerrainGenerator.getVisibleChunks(gameState.worldOffset);
+                
+                visibleChunks.forEach(({chunkX, chunkY}) => {
+                    const chunkKey = `${chunkX},${chunkY}`;
+                    let chunkData = gameState.terrainChunks.get(chunkKey);
+                    
+                    if (!chunkData) {
+                        chunkData = TerrainGenerator.generateTerrainChunk(chunkX, chunkY);
+                        gameState.terrainChunks.set(chunkKey, chunkData);
+                    }
+                    
+                    this.renderTerrainChunk(chunkX, chunkY, chunkData, gameState.worldOffset);
+                });
+                
+                // Update player positions
+                this.updatePlayerPositions(gameState);
+                
+                // Update creature positions
+                this.updateCreaturePositions(gameState);
+            }
+            
+            static renderTerrainChunk(chunkX, chunkY, chunkData, worldOffset) {
+                const worldContainer = document.getElementById('game-world');
+                const chunkElement = document.createElement('div');
+                chunkElement.className = 'terrain-chunk';
+                chunkElement.style.left = `${chunkX * 20 * 30 + worldOffset.x}px`;
+                chunkElement.style.top = `${chunkY * 25 * 30 + worldOffset.y}px`;
+                
+                for (let y = 0; y < 25; y++) {
+                    for (let x = 0; x < 20; x++) {
+                        const blockElement = document.createElement('div');
+                        blockElement.className = `terrain-block block-${chunkData[y][x]}`;
+                        blockElement.dataset.chunkX = chunkX;
+                        blockElement.dataset.chunkY = chunkY;
+                        blockElement.dataset.x = x;
+                        blockElement.dataset.y = y;
+                        
+                        // Add interaction handlers
+                        blockElement.addEventListener('click', (e) => 
+                            BlockInteraction.handleBlockPlace(e, chunkX, chunkY, x, y, gameState));
+                        blockElement.addEventListener('contextmenu', (e) => {
+                            e.preventDefault();
+                            BlockInteraction.handleBlockBreak(e, chunkX, chunkY, x, y, gameState);
+                        });
+                        
+                        chunkElement.appendChild(blockElement);
+                    }
+                }
+                
+                worldContainer.appendChild(chunkElement);
+            }
+            
+            static updatePlayerPositions(gameState) {
+                Object.keys(gameState.players).forEach(playerId => {
+                    const player = gameState.players[playerId];
+                    const playerElement = document.getElementById(`player${playerId}`);
+                    
+                    if (playerElement) {
+                        playerElement.style.left = `${player.x + gameState.worldOffset.x}px`;
+                        playerElement.style.top = `${player.y + gameState.worldOffset.y}px`;
+                    }
+                });
+            }
+            
+            static updateCreaturePositions(gameState) {
+                gameState.hostileCreatures.forEach(creature => {
+                    if (creature.element) {
+                        creature.element.style.left = `${creature.x + gameState.worldOffset.x}px`;
+                        creature.element.style.top = `${creature.y + gameState.worldOffset.y}px`;
+                    }
+                });
+            }
+        }
+
+        // ===== BLOCK INTERACTION SYSTEM =====
+        class BlockInteraction {
+            static handleBlockPlace(event, chunkX, chunkY, x, y, gameState) {
+                if (!gameState.gameRunning || gameState.isPaused) return;
+                
+                const chunkKey = `${chunkX},${chunkY}`;
+                const chunkData = gameState.terrainChunks.get(chunkKey);
+                
+                if (chunkData && chunkData[y][x] === 'air') {
+                    const worldX = chunkX * 20 + x;
+                    const worldY = chunkY * 25 + y;
+                    const blockWorldX = worldX * 30;
+                    const blockWorldY = worldY * 30;
+                    
+                    // Find closest player
+                    const distances = Object.keys(gameState.players).map(playerId => {
+                        const player = gameState.players[playerId];
+                        return {
+                            playerId: parseInt(playerId),
+                            distance: Math.abs(player.x - blockWorldX) + Math.abs(player.y - blockWorldY)
+                        };
+                    });
+                    
+                    const closestPlayer = distances.reduce((min, current) => 
+                        current.distance < min.distance ? current : min);
+                    
+                    // Only allow building if player is close enough
+                    if (closestPlayer.distance < 120) {
+                        const selectedBlock = gameState.players[closestPlayer.playerId].selectedBlock;
+                        chunkData[y][x] = selectedBlock;
+                        event.target.className = `terrain-block block-${selectedBlock}`;
+                        
+                        // Update player stats
+                        gameState.players[closestPlayer.playerId].blocksPlaced++;
+                        gameState.players[closestPlayer.playerId].score += 10;
+                        
+                        // Show building indicator
+                        this.showBuildingIndicator(blockWorldX + gameState.worldOffset.x, 
+                                                 blockWorldY + gameState.worldOffset.y, 
+                                                 `+${selectedBlock}`);
+                        
+                        // Create particle effect
+                        EffectsSystem.createParticleEffect(
+                            blockWorldX + gameState.worldOffset.x + 15, 
+                            blockWorldY + gameState.worldOffset.y + 15, 
+                            '#f39c12'
+                        );
+                    }
+                }
+            }
+            
+            static handleBlockBreak(event, chunkX, chunkY, x, y, gameState) {
+                if (!gameState.gameRunning || gameState.isPaused) return;
+                
+                const chunkKey = `${chunkX},${chunkY}`;
+                const chunkData = gameState.terrainChunks.get(chunkKey);
+                
+                if (chunkData && chunkData[y][x] !== 'air') {
+                    const worldX = chunkX * 20 + x;
+                    const worldY = chunkY * 25 + y;
+                    const blockWorldX = worldX * 30;
+                    const blockWorldY = worldY * 30;
+                    
+                    // Find closest player
+                    const distances = Object.keys(gameState.players).map(playerId => {
+                        const player = gameState.players[playerId];
+                        return {
+                            playerId: parseInt(playerId),
+                            distance: Math.abs(player.x - blockWorldX) + Math.abs(player.y - blockWorldY)
+                        };
+                    });
+                    
+                    const closestPlayer = distances.reduce((min, current) => 
+                        current.distance < min.distance ? current : min);
+                    
+                    // Only allow breaking if player is close enough
+                    if (closestPlayer.distance < 120) {
+                        const brokenBlock = chunkData[y][x];
+                        chunkData[y][x] = 'air';
+                        event.target.className = 'terrain-block block-air';
+                        
+                        // Update player stats
+                        gameState.players[closestPlayer.playerId].blocksDestroyed++;
+                        gameState.players[closestPlayer.playerId].score += 5;
+                        
+                        // Show building indicator
+                        this.showBuildingIndicator(blockWorldX + gameState.worldOffset.x, 
+                                                 blockWorldY + gameState.worldOffset.y, 
+                                                 `-${brokenBlock}`);
+                        
+                        // Create particle effect
+                        EffectsSystem.createParticleEffect(
+                            blockWorldX + gameState.worldOffset.x + 15, 
+                            blockWorldY + gameState.worldOffset.y + 15, 
+                            '#e74c3c'
+                        );
+                    }
+                }
+            }
+            
+            static showBuildingIndicator(x, y, text) {
+                const indicator = document.createElement('div');
+                indicator.className = 'building-indicator';
+                indicator.textContent = text;
+                indicator.style.left = `${x}px`;
+                indicator.style.top = `${y - 30}px`;
+                
+                document.getElementById('game-world').appendChild(indicator);
+                
+                setTimeout(() => {
+                    if (indicator.parentNode) {
+                        indicator.remove();
+                    }
+                }, 1000);
+            }
+        }
+
+        // ===== CREATURE AI SYSTEM =====
+        class CreatureAI {
+            static spawnHostileCreature(gameState) {
+                if (!gameState.isNightTime || !gameState.gameRunning || gameState.hostileCreatures.length >= 12) return;
+                
+                const spawnDistance = 200 + Math.random() * 300;
+                const spawnAngle = Math.random() * Math.PI * 2;
+                const centerX = (gameState.players[1].x + gameState.players[2].x) / 2;
+                const centerY = (gameState.players[1].y + gameState.players[2].y) / 2;
+                
+                const creature = {
+                    x: centerX + Math.cos(spawnAngle) * spawnDistance,
+                    y: centerY + Math.sin(spawnAngle) * spawnDistance,
+                    health: 2,
+                    lastAttackTime: 0,
+                    targetPlayer: Math.random() > 0.5 ? 1 : 2,
+                    behaviorState: 'hunting', // hunting, attacking, fleeing
+                    speed: 0.8 + Math.random() * 0.4,
+                    element: null
+                };
+                
+                // Create creature element
+                creature.element = document.createElement('div');
+                creature.element.className = 'hostile-creature moving';
+                creature.element.textContent = '👹';
+                creature.element.style.left = `${creature.x + gameState.worldOffset.x}px`;
+                creature.element.style.top = `${creature.y + gameState.worldOffset.y}px`;
+                
+                gameState.hostileCreatures.push(creature);
+                document.getElementById('game-world').appendChild(creature.element);
+            }
+            
+            static updateCreatureBehavior(gameState) {
+                if (!gameState.gameRunning || gameState.isPaused) return;
+                
+                gameState.hostileCreatures.forEach((creature, index) => {
+                    const targetPlayer = gameState.players[creature.targetPlayer];
+                    const dx = targetPlayer.x - creature.x;
+                    const dy = targetPlayer.y - creature.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    // Update behavior based on distance and health
+                    if (creature.health <= 0) {
+                        creature.behaviorState = 'dying';
+                    } else if (distance < 50) {
+                        creature.behaviorState = 'attacking';
+                    } else if (distance < 300) {
+                        creature.behaviorState = 'hunting';
+                    } else {
+                        creature.behaviorState = 'wandering';
+                    }
+                    
+                    // Execute behavior
+                    switch (creature.behaviorState) {
+                        case 'hunting':
+                            this.huntingBehavior(creature, targetPlayer, dx, dy, distance);
+                            break;
+                        case 'attacking':
+                            this.attackingBehavior(creature, targetPlayer, gameState);
+                            break;
+                        case 'wandering':
+                            this.wanderingBehavior(creature);
+                            break;
+                        case 'dying':
+                            this.removeCreature(creature, index, gameState);
+                            break;
+                    }
+                });
+            }
+            
+            static huntingBehavior(creature, targetPlayer, dx, dy, distance) {
+                if (distance > 35) {
+                    const moveX = (dx / distance) * creature.speed;
+                    const moveY = (dy / distance) * creature.speed;
+                    creature.x += moveX;
+                    creature.y += moveY;
+                    
+                    creature.element.classList.add('moving');
+                    creature.element.classList.remove('attacking');
+                }
+            }
+            
+            static attackingBehavior(creature, targetPlayer, gameState) {
+                const currentTime = Date.now();
+                
+                if (currentTime - creature.lastAttackTime > 1500) {
+                    creature.lastAttackTime = currentTime;
+                    creature.element.classList.add('attacking');
+                    
+                    setTimeout(() => {
+                        creature.element.classList.remove('attacking');
+                        
+                        // Check if still close enough to damage
+                        const dx = targetPlayer.x - creature.x;
+                        const dy = targetPlayer.y - creature.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance < 60) {
+                            PlayerSystem.damagePlayer(creature.targetPlayer, gameState);
+                        }
+                    }, 500);
+                }
+            }
+            
+            static wanderingBehavior(creature) {
+                // Simple random movement
+                creature.x += (Math.random() - 0.5) * 2;
+                creature.y += (Math.random() - 0.5) * 2;
+                
+                creature.element.classList.add('moving');
+                creature.element.classList.remove('attacking');
+            }
+            
+            static removeCreature(creature, index, gameState) {
+                if (creature.element && creature.element.parentNode) {
+                    creature.element.remove();
+                }
+                gameState.hostileCreatures.splice(index, 1);
+            }
+        }
+
+        // ===== PLAYER SYSTEM =====
+        class PlayerSystem {
+            static movePlayer(playerId, dx, dy, gameState) {
+                if (!gameState.gameRunning || gameState.isPaused) return;
+                
+                const player = gameState.players[playerId];
+                const newX = player.x + dx * 30;
+                const newY = player.y + dy * 30;
+                
+                // Basic boundary checking
+                if (this.isValidPosition(newX, newY)) {
+                    player.x = newX;
+                    player.y = newY;
+                    
+                    const playerElement = document.getElementById(`player${playerId}`);
+                    if (playerElement) {
+                        playerElement.classList.add('moving');
+                        setTimeout(() => playerElement.classList.remove('moving'), 150);
+                    }
+                    
+                    // Update world offset to follow players
+                    this.updateWorldOffset(gameState);
+                }
+            }
+            
+            static isValidPosition(x, y) {
+                // Simple bounds checking - in a full game, you'd check for solid blocks
+                return x >= -1000 && x <= 2000 && y >= -500 && y <= 1000;
+            }
+            
+            static updateWorldOffset(gameState) {
+                const centerX = (gameState.players[1].x + gameState.players[2].x) / 2;
+                const centerY = (gameState.players[1].y + gameState.players[2].y) / 2;
+                
+                gameState.worldOffset.x = window.innerWidth / 2 - centerX;
+                gameState.worldOffset.y = (window.innerHeight - 80) / 2 - centerY;
+                
+                // Re-render world with new offset
+                RenderingEngine.renderGameWorld(gameState);
+            }
+            
+            static damagePlayer(playerId, gameState) {
+                const player = gameState.players[playerId];
+                const currentTime = Date.now();
+                
+                // Damage immunity period
+                if (currentTime - player.lastDamageTime < 1200) return;
+                
+                player.health--;
+                player.lastDamageTime = currentTime;
+                
+                // Visual feedback
+                const playerElement = document.getElementById(`player${playerId}`);
+                if (playerElement) {
+                    playerElement.classList.add('damaged');
+                    setTimeout(() => playerElement.classList.remove('damaged'), 500);
+                }
+                
+                // Show damage indicator
+                EffectsSystem.showDamageIndicator(playerId, gameState);
+                
+                // Update health display
+                UISystem.updateHealthDisplay(gameState);
+                
+                // Check for game over
+                if (player.health <= 0) {
+                    GameSystem.endGame(`Player ${playerId} has been defeated! The other player wins!`, gameState);
+                }
+            }
+            
+            static updateSelectedBlock(playerId, blockType, gameState) {
+                if (gameState.players[playerId]) {
+                    gameState.players[playerId].selectedBlock = blockType;
+                }
+            }
+        }
+
+        // ===== EFFECTS SYSTEM =====
+        class EffectsSystem {
+            static showDamageIndicator(playerId, gameState) {
+                const player = gameState.players[playerId];
+                const indicator = document.createElement('div');
+                indicator.className = 'floating-damage';
+                indicator.textContent = '-1 ❤️';
+                indicator.style.left = `${player.x + gameState.worldOffset.x}px`;
+                indicator.style.top = `${player.y + gameState.worldOffset.y - 25}px`;
+                
+                document.getElementById('game-world').appendChild(indicator);
+                
+                setTimeout(() => {
+                    if (indicator.parentNode) {
+                        indicator.remove();
+                    }
+                }, 1500);
+            }
+            
+            static createParticleEffect(x, y, color) {
+                for (let i = 0; i < 5; i++) {
+                    const particle = document.createElement('div');
+                    particle.className = 'particle-effect';
+                    particle.style.left = `${x + (Math.random() - 0.5) * 20}px`;
+                    particle.style.top = `${y + (Math.random() - 0.5) * 20}px`;
+                    particle.style.background = color;
+                    
+                    document.getElementById('game-world').appendChild(particle);
+                    
+                    setTimeout(() => {
+                        if (particle.parentNode) {
+                            particle.remove();
+                        }
+                    }, 2000);
+                }
+            }
+            
+            static updateWeatherEffects(gameState) {
+                const weatherLayer = document.getElementById('weather-layer');
+                
+                // Clear existing weather
+                weatherLayer.innerHTML = '';
+                
+                if (gameState.weatherSystem.type === 'rain' && gameState.weatherSystem.intensity > 0) {
+                    for (let i = 0; i < gameState.weatherSystem.intensity * 20; i++) {
+                        const rainDrop = document.createElement('div');
+                        rainDrop.className = 'rain-drop';
+                        rainDrop.style.left = `${Math.random() * window.innerWidth}px`;
+                        rainDrop.style.animationDelay = `${Math.random() * 1}s`;
+                        rainDrop.style.animationDuration = `${0.5 + Math.random() * 0.5}s`;
+                        
+                        weatherLayer.appendChild(rainDrop);
+                    }
+                }
+            }
+        }
+
+        // ===== UI SYSTEM =====
+        class UISystem {
+            static updateHealthDisplay(gameState) {
+                Object.keys(gameState.players).forEach(playerId => {
+                    const player = gameState.players[playerId];
+                    const healthContainer = document.getElementById(`player${playerId}-health`);
+                    
+                    if (healthContainer) {
+                        healthContainer.innerHTML = '';
+                        
+                        for (let i = 0; i < player.maxHealth; i++) {
+                            const heart = document.createElement('div');
+                            heart.className = i < player.health ? 'heart-icon' : 'heart-icon empty';
+                            healthContainer.appendChild(heart);
+                        }
+                    }
+                });
+            }
+            
+            static updateTimeDisplay(gameState) {
+                const hours = Math.floor(gameState.gameTime / 60);
+                const minutes = gameState.gameTime % 60;
+                const timeString = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+                const period = hours < 12 ? 'AM' : 'PM';
+                
+                // Update time display
+                document.getElementById('time-display').textContent = `${timeString} ${period}`;
+                document.getElementById('day-counter').textContent = `Day ${gameState.gameDay}`;
+                
+                // Update day/night indicator
+                const timeIcon = document.getElementById('time-icon');
+                if (gameState.isNightTime) {
+                    timeIcon.textContent = '🌙';
+                } else {
+                    timeIcon.textContent = '☀️';
+                }
+                
+                // Update enemy counter
+                document.getElementById('enemy-counter').textContent = `Enemies: ${gameState.hostileCreatures.length}`;
+                
+                // Update weather status
+                const weatherStatus = gameState.weatherSystem.type === 'clear' ? 'Clear Skies' : 
+                                    gameState.weatherSystem.type === 'rain' ? 'Raining' : 'Stormy';
+                document.getElementById('weather-status').textContent = weatherStatus;
+            }
+            
+            static updateWorldVisuals(gameState) {
+                const worldContainer = document.getElementById('game-world');
+                
+                if (gameState.isNightTime) {
+                    worldContainer.classList.add('night-mode');
+                } else {
+                    worldContainer.classList.remove('night-mode');
+                }
+            }
+        }
+
+        // ===== MAIN GAME SYSTEM =====
+        class GameSystem {
+            static updateTimeAndWeather(gameState) {
+                gameState.gameTime += 3; // 3 minutes per game loop iteration
+                
+                if (gameState.gameTime >= 1440) { // 24 hours
+                    gameState.gameTime = 0;
+                    gameState.gameDay++;
+                }
+                
+                // Night is from 20:00 (1200 minutes) to 06:00 (360 minutes)
+                const wasNight = gameState.isNightTime;
+                gameState.isNightTime = gameState.gameTime >= 1200 || gameState.gameTime < 360;
+                
+                // Clear enemies at dawn
+                if (wasNight && !gameState.isNightTime) {
+                    gameState.hostileCreatures.forEach(creature => {
+                        if (creature.element && creature.element.parentNode) {
+                            creature.element.remove();
+                        }
+                    });
+                    gameState.hostileCreatures = [];
+                }
+                
+                // Update weather system
+                if (Math.random() < 0.01) { // 1% chance per loop to change weather
+                    if (gameState.weatherSystem.type === 'clear') {
+                        gameState.weatherSystem.type = 'rain';
+                        gameState.weatherSystem.intensity = Math.random() * 0.5 + 0.3;
+                    } else {
+                        gameState.weatherSystem.type = 'clear';
+                        gameState.weatherSystem.intensity = 0;
+                    }
+                }
+                
+                UISystem.updateTimeDisplay(gameState);
+                UISystem.updateWorldVisuals(gameState);
+                EffectsSystem.updateWeatherEffects(gameState);
+            }
+            
+            static handleInput(gameState) {
+                if (!gameState.gameRunning || gameState.isPaused) return;
+                
+                // Player 1 movement (WASD)
+                if (gameState.inputKeys['w']) PlayerSystem.movePlayer(1, 0, -1, gameState);
+                if (gameState.inputKeys['s']) PlayerSystem.movePlayer(1, 0, 1, gameState);
+                if (gameState.inputKeys['a']) PlayerSystem.movePlayer(1, -1, 0, gameState);
+                if (gameState.inputKeys['d']) PlayerSystem.movePlayer(1, 1, 0, gameState);
+                
+                // Player 2 movement (Arrow keys)
+                if (gameState.inputKeys['arrowup']) PlayerSystem.movePlayer(2, 0, -1, gameState);
+                if (gameState.inputKeys['arrowdown']) PlayerSystem.movePlayer(2, 0, 1, gameState);
+                if (gameState.inputKeys['arrowleft']) PlayerSystem.movePlayer(2, -1, 0, gameState);
+                if (gameState.inputKeys['arrowright']) PlayerSystem.movePlayer(2, 1, 0, gameState);
+                
+                // Block selection for both players
+                Object.keys(gameState.blockSelections[1]).forEach(key => {
+                    if (gameState.inputKeys[key]) {
+                        PlayerSystem.updateSelectedBlock(1, gameState.blockSelections[1][key], gameState);
+                    }
+                });
+                
+                Object.keys(gameState.blockSelections[2]).forEach(key => {
+                    if (gameState.inputKeys[key]) {
+                        PlayerSystem.updateSelectedBlock(2, gameState.blockSelections[2][key], gameState);
+                    }
+                });
+            }
+            
+            static endGame(message, gameState) {
+                gameState.gameRunning = false;
+                document.getElementById('game-over-text').textContent = message;
+                document.getElementById('game-over-screen').style.display = 'flex';
+            }
+            
+            static mainGameLoop(gameState) {
+                if (!gameState.gameRunning && !gameState.isPaused) {
+                    setTimeout(() => GameSystem.mainGameLoop(gameState), 100);
+                    return;
+                }
+                
+                if (!gameState.isPaused) {
+                    GameSystem.handleInput(gameState);
+                    GameSystem.updateTimeAndWeather(gameState);
+                    CreatureAI.updateCreatureBehavior(gameState);
+                    
+                    // Spawn enemies at night
+                    if (gameState.isNightTime && Math.random() < 0.03) {
+                        CreatureAI.spawnHostileCreature(gameState);
+                    }
+                }
+                
+                setTimeout(() => GameSystem.mainGameLoop(gameState), 120);
+            }
+        }
+
+        // ===== GLOBAL GAME INSTANCE =====
+        let gameState = new GameState();
+
+        // ===== EVENT HANDLERS =====
+        function setupEventHandlers() {
+            // Keyboard input
+            document.addEventListener('keydown', (e) => {
+                gameState.inputKeys[e.key.toLowerCase()] = true;
+                
+                // Prevent default for game keys
+                const gameKeys = ['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'];
+                if (gameKeys.includes(e.key.toLowerCase())) {
+                    e.preventDefault();
+                }
+                
+                // Pause game with spacebar
+                if (e.key === ' ') {
+                    e.preventDefault();
+                    togglePause();
+                }
+            });
+            
+            document.addEventListener('keyup', (e) => {
+                gameState.inputKeys[e.key.toLowerCase()] = false;
+            });
+        }
+
+        // ===== UTILITY FUNCTIONS =====
+        function restartEntireGame() {
+            // Clear all enemies
+            gameState.hostileCreatures.forEach(creature => {
+                if (creature.element && creature.element.parentNode) {
+                    creature.element.remove();
+                }
+            });
+            
+            // Reset game state
+            gameState = new GameState();
+            
+            // Hide game over screen
+            document.getElementById('game-over-screen').style.display = 'none';
+            
+            // Reinitialize game
+            initializeGame();
+        }
+        
+        function togglePause() {
+            gameState.isPaused = !gameState.isPaused;
+            
+            if (gameState.isPaused) {
+                document.getElementById('game-over-text').textContent = 'Game Paused - Press Space to Resume';
+                document.getElementById('game-over-screen').style.display = 'flex';
+            } else {
+                document.getElementById('game-over-screen').style.display = 'none';
+            }
+        }
+
+        // ===== GAME INITIALIZATION =====
+        function initializeGame() {
+            // Setup initial world
+            RenderingEngine.renderGameWorld(gameState);
+            
+            // Update UI
+            UISystem.updateHealthDisplay(gameState);
+            UISystem.updateTimeDisplay(gameState);
+            
+            // Setup event handlers
+            setupEventHandlers();
+            
+            // Start main game loop
+            GameSystem.mainGameLoop(gameState);
+        }
+
+        // ===== START GAME =====
+        document.addEventListener('DOMContentLoaded', initializeGame);
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96e179a0646bcd1b',t:'MTc1NTAxNzQ2MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
