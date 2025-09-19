@@ -29,14 +29,13 @@ I'm a software engineer passionate about Python, JavaScript, Machine Learning, a
 
 ## 🏆 GitHub Trophies
 
-[![trophy](https://github-profile-trophy.vercel.app/?username=denzeldcb)](https://github.com/denzeldcb)
+![trophy](https://github-profile-trophy.vercel.app/?username=denzeldcb)](https://github.com/denzeldcb)
 
 ---
 
 ## 📊 Activity
-
-[![activity](https://github-readme-stats.vercel.app/api/top-langs/?username=denzeldcb&theme=tokyonight&langs_count=8)
-[![activity2](https://github-readme-streak-stats.herokuapp.com/?user=denzeldcb&theme=tokyonight)
-[![activity3](https://github-readme-stats.vercel.app/api?username=denzeldcb&show_icons=true&theme=tokyonight&include_all_commits=true)
+![activity2](https://github-readme-streak-stats.herokuapp.com/?user=denzeldcb&theme=tokyonight)
+![activity](https://github-readme-stats.vercel.app/api/top-langs/?username=denzeldcb&theme=tokyonight&langs_count=8)
+![activity3](https://github-readme-stats.vercel.app/api?username=denzeldcb&show_icons=true&theme=tokyonight&include_all_commits=true)
 
 ---
