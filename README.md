@@ -29,7 +29,7 @@ I'm a software engineer passionate about Python, JavaScript, Machine Learning, a
 
 ## 🏆 GitHub Trophies
 
-![trophy](https://github-profile-trophy.vercel.app/?username=denzeldcb)]
+![trophy](https://github-profile-trophy.vercel.app/?username=denzeldcb)
 
 ---
 
