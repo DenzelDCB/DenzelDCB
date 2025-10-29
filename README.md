@@ -9,7 +9,7 @@ I'm a software engineer passionate about Python, JavaScript, Machine Learning, a
 - **[Ventrai](https://ventrai.pages.dev)**  
   AI-powered solutions for modern workflows.
 
-- **[Phytosense](https://phytosense.pages.dev)**  
+- **[Phytelix](https://phytelix.com)**  
   Advanced plant health monitoring using machine learning.
 
 ---
