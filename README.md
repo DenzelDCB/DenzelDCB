@@ -1,5 +1,7 @@
 # Hi there, I'm DenzelDCB 👋
 
+<p align="left"> <img src="https://komarev.com/ghpvc/?username=denzeldcb&label=Profile%20views&color=0e75b6&style=flat" alt="shubhammahajan880" /> </p>
+
 I'm a software engineer passionate about Python, JavaScript, Machine Learning, and Web Development. I love creating innovative projects and exploring the latest in tech and gaming.
 
 ---
