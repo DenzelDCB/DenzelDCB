@@ -9,7 +9,7 @@ I'm a software engineer passionate about Python, JavaScript, Machine Learning, a
 ## 🚀 Projects
 
 - **[Ventrai](https://ventrai.pages.dev)**  
-  AI-powered solutions for modern workflows.
+  Mentoring with experienced people 1-on-1.
 
 - **[Phytelix](https://phytelix.com)**  
   Advanced plant health monitoring using machine learning.
