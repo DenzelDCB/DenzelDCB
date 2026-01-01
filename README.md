@@ -4,7 +4,7 @@
 I'm a software engineer passionate about Python, JavaScript, Machine Learning, and Web Development. I love creating innovative projects and exploring the latest in tech and gaming.
 ---
 <br/><br/>
-[![Readme Quotes](https://quotes-github-readme.vercel.app/api?type=horizontal&theme=dark&quote=A%20solution%20that%20solves%20an%20multiple%20problems%20in%20advance%20is%20a%20solution%20that%20people%20will%20rely%20on.)](https://github.com/piyushsuthar/github-readme-quotes)
+[![Readme Quotes](https://quotes-github-readme.vercel.app/api?type=horizontal&theme=dark&quote=A%20solution%20that%20solves%20multiple%20problems%20in%20advance%20is%20a%20solution%20that%20people%20will%20rely%20on.)](https://github.com/piyushsuthar/github-readme-quotes)
 
 ## 🚀 Projects
 
