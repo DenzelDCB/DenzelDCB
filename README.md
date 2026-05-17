@@ -1,4 +1,4 @@
-[![Typing SVG](https://readme-typing-svg.demolab.com?font=Fira+Code&size=30&pause=1000&color=F7821D&width=800&lines=Denzel+Babs+%7C+Full+Stack+Developer;Proficient+in+Python%2C+JavaScript+and+more...;Owner+of+Phytelix+and+Ventrai)](https://git.io/typing-svg)
+[![Typing SVG](https://readme-typing-svg.demolab.com?font=Fira+Code&size=30&pause=1000&color=F7821D&width=800&lines=Denzel+Babs+%7C+Software+Engineer;Proficient+in+Python%2C+JavaScript+and+more...;Owner+of+Phytelix+,+Ventrai+and+Pylernen)](https://git.io/typing-svg)
 <p align="left"> <img src="https://komarev.com/ghpvc/?username=denzeldcb&label=Profile%20views&color=0e75b6&style=flat" alt="denzeldcb" /> </p>
 
 I'm a software engineer passionate about Python, JavaScript, Machine Learning, and Web Development. I love creating innovative projects and exploring the latest in tech and gaming.
@@ -13,6 +13,9 @@ I'm a software engineer passionate about Python, JavaScript, Machine Learning, a
 
 - **[Phytelix](https://phytelix.com)**  
   Advanced plant health monitoring using machine learning.
+
+- **[Pylernen](https://pylernen.org)**  
+  Teaching young people Python in a fun, engaging, and interactive way.
 
 ---
 
