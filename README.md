@@ -3,6 +3,7 @@
 
 I'm a software engineer passionate about Python, JavaScript, Machine Learning, and Web Development. I love creating innovative projects and exploring the latest in tech and gaming.
 ---
+
 <br/><br/>
 [![Readme Quotes](https://quotes-github-readme.vercel.app/api?type=horizontal&theme=dark&quote=A%20solution%20that%20solves%20multiple%20problems%20in%20advance%20is%20a%20solution%20that%20people%20will%20rely%20on.)](https://github.com/piyushsuthar/github-readme-quotes)
 
@@ -42,5 +43,15 @@ I'm a software engineer passionate about Python, JavaScript, Machine Learning, a
 ![activity2](https://github-readme-streak-stats.herokuapp.com/?user=denzeldcb&theme=tokyonight)
 ![activity](https://github-readme-stats.vercel.app/api/top-langs/?username=denzeldcb&theme=tokyonight&langs_count=8)
 ![activity3](https://github-readme-stats.vercel.app/api?username=denzeldcb&show_icons=true&theme=tokyonight&include_all_commits=true)
+
+---
+
+## 🎛️ Contributions
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/denzeldcb/denzeldcb/pacman-output/pacman-contribution-graph-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/denzeldcb/denzeldcb/pacman-output/pacman-contribution-graph.svg">
+  <img alt="pacman contribution graph" src="https://raw.githubusercontent.com/denzeldcb/denzeldcb/pacman-output/pacman-contribution-graph.svg">
+</picture>
 
 ---
