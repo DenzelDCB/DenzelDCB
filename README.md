@@ -13,6 +13,14 @@ Currently focused on building <a href="https://kere-o.com">Kere-O</a>.
 ---
  
 ### 🚀 Selected Work
+
+**[Kere-O](https://kere-o.com)**, Turn any celebration into a keepsake everyone can open.
+- Problem: People print paper and use them for events. Hours after the event has passed, most of the paper is thrown away with the memories.
+- Approach: A digitalized version of your event and it's data. Nothing get's thrown away, and anyone can see the memories after the event.
+- Impact: Includes RSVP, Seating, Photos, Ask the host questions, Meet guests, Menu, Voices, Gifting
+- Stack: `HTML`, `JS`, `Supabase`, `AI`
+
+<br/>
  
 **[Phytelix](https://phytelix.com)**,  AI-powered crop disease detection for farmers
 - Problem: Smallholder farmers often lack fast access to agronomists, so treatable crop disease spreads before it's diagnosed.
@@ -39,7 +47,7 @@ Currently focused on building <a href="https://kere-o.com">Kere-O</a>.
  
 ### 🛠️ Technical Skills
  
-- **Languages:** Python, JavaScript, HTML, CSS, Linux
+- **Languages:** Python, JavaScript, HTML, CSS, Linux, C++
 - **ML/Data:** PyTorch, scikit-learn, Tensorflow
 - **Web:** React, Node.js, Supabase, Firebase
 - **Infra/Tooling:** Git
