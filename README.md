@@ -1,57 +1,70 @@
-[![Typing SVG](https://readme-typing-svg.demolab.com?font=Fira+Code&size=30&pause=1000&color=F7821D&width=800&lines=Denzel+Babs+%7C+Software+Engineer;Proficient+in+Python%2C+JavaScript+and+more...;Owner+of+Phytelix+,+Ventrai+and+Pylernen)](https://git.io/typing-svg)
-<p align="left"> <img src="https://komarev.com/ghpvc/?username=denzeldcb&label=Profile%20views&color=0e75b6&style=flat" alt="denzeldcb" /> </p>
-
-I'm a software engineer passionate about Python, JavaScript, Machine Learning, and Web Development. I love creating innovative projects and exploring the latest in tech and gaming.
----
-
-<br/><br/>
-[![Readme Quotes](https://quotes-github-readme.vercel.app/api?type=horizontal&theme=dark&quote=A%20solution%20that%20solves%20multiple%20problems%20in%20advance%20is%20a%20solution%20that%20people%20will%20rely%20on.)](https://github.com/piyushsuthar/github-readme-quotes)
-
-## 🚀 Projects
-
-- **[Ventrai](https://ventrai.pages.dev)**  
-  Mentoring with experienced people 1-on-1.
-
-- **[Phytelix](https://phytelix.com)**  
-  Advanced plant health monitoring using machine learning.
-
-- **[Pylernen](https://pylernen.org)**  
-  Teaching young people Python in a fun, engaging, and interactive way.
+<h1 align="left">Denzel Babs</h1>
+<h3 align="left">Software Engineer,  Machine Learning & Web Systems</h3>
+ 
+<p align="left">
+I build production ML systems and web platforms end to end, from data pipeline to deployed product.
+Founder of three ventures spanning agritech, mentorship, and developer education.
+Currently focused on building <a href="https://kere-o.com">Kere-O</a>.
+</p>
+<p align="left">
+📍 USA &nbsp;|&nbsp; 📫 <a href="mailto:denzel@pylernen.org">denzel@pylernen.org</a>
+</p>
 
 ---
+ 
+### 🚀 Selected Work
+ 
+**[Phytelix](https://phytelix.com)**,  AI-powered crop disease detection for farmers
+- Problem: Smallholder farmers often lack fast access to agronomists, so treatable crop disease spreads before it's diagnosed.
+- Approach: In-browser computer vision classifier (webcam or upload, multi-image supported) that runs disease detection client-side with no data leaving the device, paired with a treatment-recommendation database. Crop-specific models plus an auto-detect mode.
+- Impact: 364 diseases supported across 13 crop types, 92% accuracy validated through field trials, ~5 second average analysis time.
+- Stack: `Computer Vision` `Client-side ML inference` `TensorFlow` `HTML`
 
-## 🛠️ Skills
+<br/>
 
-- **Languages:** Python, JavaScript
-- **Specialties:** Machine Learning, Web Development
+**[Pylernen](https://pylernen.org)**,  Interactive Python learning platform
+- Problem: Most beginner Python resources are either static tutorials or require local environment setup, which is a real barrier for new learners.
+- Approach: 20-lesson interactive curriculum with a live in-browser code editor (Pyodide,  runs real Python client-side, zero install), an AI debug assistant for instant error help, a companion Python handbook, and a certificate on completion.
+- Impact: Tiered access model (free tier + two paid tiers), full course + playground + AI debugging bundled into a single self-paced product. [Add learner count / completion rate if you track it.]
+- Stack: `Python` `Pyodide (WASM)` `[backend/auth stack]` `AI-assisted debugging`
+
+<br/>
+
+**[Ventrai](https://ventrai.pages.dev)**,  1:1 mentorship matching platform
+- Problem: Finding the right mentor for a specific goal is usually informal and unstructured.
+- Approach: Connects mentors and mentees directly for 1:1 collaboration and learning.
+- Impact: Helped mentees get mentors for future aspiration.
+- Stack: `ReactJS` `Firebase` `Cloudflare Pages`
+---
+ 
+### 🛠️ Technical Skills
+ 
+- **Languages:** Python, JavaScript, HTML, CSS, Linux
+- **ML/Data:** PyTorch, scikit-learn, Tensorflow
+- **Web:** React, Node.js, Supabase, Firebase
+- **Infra/Tooling:** Git
+ 
+---
+ 
+### 📌 Currently
+ 
+- Building: [Kere-O](https://kere-o.com)
+- Learning: Modern Robotics
 
 ---
+ 
+### 📊 GitHub Activity
+ 
+<!-- ![GitHub Stats](https://github-readme-stats.vercel.app/api?username=denzeldcb&show_icons=true&theme=default&hide_border=true&count_private=true)
+![Top Languages](https://github-readme-stats.vercel.app/api/top-langs/?username=denzeldcb&theme=default&hide_border=true&layout=compact) -->
 
-## 🎮 Interests
+<div style="display: flex; align-items: center; justify-content: center; padding: 20px; background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; border-radius: 4px; font-family: sans-serif; font-size: 16px; font-weight: bold;">
+    Not Available
+</div>
 
-- Gaming enthusiast
-
----
-
-## 🏆 GitHub Trophies
-
-![trophy](https://github-profile-trophy.vercel.app/?username=denzeldcb)
-
----
-
-## 📊 Activity
-![activity2](https://github-readme-streak-stats.herokuapp.com/?user=denzeldcb&theme=tokyonight)
-![activity](https://github-readme-stats.vercel.app/api/top-langs/?username=denzeldcb&theme=tokyonight&langs_count=8)
-![activity3](https://github-readme-stats.vercel.app/api?username=denzeldcb&show_icons=true&theme=tokyonight&include_all_commits=true)
 
 ---
-
-## 🎛️ Contributions
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/denzeldcb/denzeldcb/pacman-output/pacman-contribution-graph-dark.svg">
-  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/denzeldcb/denzeldcb/pacman-output/pacman-contribution-graph.svg">
-  <img alt="pacman contribution graph" src="https://raw.githubusercontent.com/denzeldcb/denzeldcb/pacman-output/pacman-contribution-graph.svg">
-</picture>
-
----
+ 
+### 📫 Connect
+ 
+[LinkedIn](https://www.linkedin.com/company/grow-with-denzel) · [Email](mailto:denzel@pylernen.org) · [Portfolio](https://denzeldcb.github.io/portfolio)
