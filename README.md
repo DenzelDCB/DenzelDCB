@@ -7,7 +7,7 @@ Founder of three ventures spanning agritech, mentorship, and developer education
 Currently focused on building <a href="https://kere-o.com">Kere-O</a>.
 </p>
 <p align="left">
-📍 USA &nbsp;|&nbsp; 📫 <a href="mailto:denzel@pylernen.org">denzel@pylernen.org</a>
+📍 USA &nbsp;|&nbsp; 📫 <a href="mailto:denzel@pylernen.org">denzel@pylernen.org</a> &nbsp;|&nbsp; <a href="https://docs.google.com/document/d/1oAcQ3nP17MxPbRvvqmcXSc0GNndKVPwE">My Resume</a>
 </p>
 
 ---
