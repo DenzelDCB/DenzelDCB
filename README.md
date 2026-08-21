@@ -33,7 +33,7 @@ Currently focused on building <a href="https://kere-o.com">Kere-O</a>.
 **[Pylernen](https://pylernen.org)**,  Interactive Python learning platform
 - Problem: Most beginner Python resources are either static tutorials or require local environment setup, which is a real barrier for new learners.
 - Approach: 20-lesson interactive curriculum with a live in-browser code editor (Pyodide,  runs real Python client-side, zero install), an AI debug assistant for instant error help, a companion Python handbook, and a certificate on completion.
-- Impact: Tiered access model (free tier + two paid tiers), full course + playground + AI debugging bundled into a single self-paced product. [Add learner count / completion rate if you track it.]
+- Impact: Tiered access model (free tier + two paid tiers), full course + playground + AI debugging bundled into a single self-paced product.
 - Stack: `Python` `Pyodide (WASM)` `[backend/auth stack]` `AI-assisted debugging`
 
 <br/>
